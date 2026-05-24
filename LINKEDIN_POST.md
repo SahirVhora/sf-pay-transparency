@@ -29,7 +29,7 @@ The EU Pay Transparency Directive deadline is getting close. For many organisati
 
 I’ve shared the prototype here:
 
-[GitHub link]
+https://github.com/SahirVhora/sf-pay-transparency
 
 Curious how other SuccessFactors and Reward teams are approaching this. Are you starting with policy, data quality, job architecture, reporting, or workflow design?
 
