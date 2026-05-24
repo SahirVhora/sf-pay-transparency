@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SF Pay Transparency Directive - Readiness Checker (Mockup)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#08090a;color:#e4e4e7;min-height:100vh}
+.topbar{background:#0f1012;border-bottom:1px solid #1e1e22;padding:16px 32px;display:flex;align-items:center;justify-content:space-between}
+.topbar h1{font-size:18px;font-weight:600;color:#fff;display:flex;align-items:center;gap:10px}
+.topbar h1 .icon{font-size:22px}
+.topbar .badge{background:#c8a84e;color:#000;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:0.5px}
+.container{max-width:1200px;margin:0 auto;padding:24px 32px}
+
+/* Scorecard Section */
+.scorecard{display:grid;grid-template-columns:280px 1fr;gap:24px;margin-bottom:32px}
+.ring-card{background:#111215;border:1px solid #1e1e22;border-radius:12px;padding:28px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring{width:140px;height:140px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.ring svg{position:absolute;top:0;left:0;transform:rotate(-90deg)}
+.ring .score{font-size:42px;font-weight:700;color:#f59e0b}
+.ring .label{font-size:12px;color:#a1a1aa;margin-top:-4px}
+.verdict{font-size:15px;font-weight:600;color:#f59e0b;margin-bottom:4px}
+.subtext{font-size:12px;color:#71717a}
+.detail-card{background:#111215;border:1px solid #1e1e22;border-radius:12px;padding:24px}
+.detail-card h2{font-size:14px;font-weight:600;color:#a1a1aa;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+.cat-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid #1a1a1e}
+.cat-row:last-child{border-bottom:none}
+.cat-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.cat-dot.green{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,0.4)}
+.cat-dot.amber{background:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,0.4)}
+.cat-dot.red{background:#ef4444;box-shadow:0 0 8px rgba(239,68,68,0.4)}
+.cat-name{flex:1;font-size:13px;font-weight:500}
+.cat-status{font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;text-transform:uppercase}
+.cat-status.pass{background:#22c55e22;color:#22c55e}
+.cat-status.partial{background:#f59e0b22;color:#f59e0b}
+.cat-status.fail{background:#ef444422;color:#ef4444}
+.cat-score{font-size:13px;font-weight:600;width:40px;text-align:right}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:24px;background:#111215;border:1px solid #1e1e22;border-radius:10px;padding:4px}
+.tab{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;color:#71717a;cursor:pointer;border:none;background:transparent;transition:all 0.15s}
+.tab:hover{color:#e4e4e7}
+.tab.active{background:#1e1e22;color:#fff}
+.tab .count{background:#c8a84e;color:#000;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:6px}
+
+/* Findings Table */
+.findings{background:#111215;border:1px solid #1e1e22;border-radius:12px;overflow:hidden}
+.findings-header{display:grid;grid-template-columns:40px 2fr 1.5fr 1fr 120px;padding:12px 20px;background:#15151a;font-size:11px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px}
+.finding-row{display:grid;grid-template-columns:40px 2fr 1.5fr 1fr 120px;padding:14px 20px;border-top:1px solid #1a1a1e;align-items:center;font-size:13px}
+.finding-row:hover{background:#18181c}
+.severity{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.severity.critical{background:#ef444422;color:#ef4444}
+.severity.high{background:#f9731622;color:#f97316}
+.severity.medium{background:#f59e0b22;color:#f59e0b}
+.finding-title{font-weight:500;color:#e4e4e7}
+.finding-detail{color:#a1a1aa;font-size:12px;margin-top:2px}
+.fix-path{color:#c8a84e;font-family:'JetBrains Mono',monospace;font-size:11px;background:#c8a84e11;padding:4px 8px;border-radius:4px;display:inline-block}
+.action-required{font-size:11px;font-weight:600;color:#ef4444;text-align:right}
+.action-done{font-size:11px;font-weight:600;color:#22c55e;text-align:right}
+
+/* Directive Banner */
+.directive-banner{background:linear-gradient(135deg,#1a1205 0%,#1e1205 100%);border:1px solid #c8a84e33;border-radius:10px;padding:16px 24px;margin-bottom:24px;display:flex;align-items:center;gap:16px}
+.directive-banner .icon{font-size:28px}
+.directive-banner .text{flex:1}
+.directive-banner .text strong{color:#c8a84e;font-size:14px}
+.directive-banner .text p{color:#a1a1aa;font-size:12px;margin-top:2px}
+.countdown{background:#c8a84e22;border:1px solid #c8a84e44;border-radius:8px;padding:8px 16px;text-align:center}
+.countdown .num{font-size:24px;font-weight:700;color:#c8a84e}
+.countdown .label{font-size:10px;color:#a1a1aa;text-transform:uppercase}
+
+/* Accordion */
+.accordion{background:#111215;border:1px solid #1e1e22;border-radius:12px;overflow:hidden;margin-bottom:24px}
+.accordion-item{border-bottom:1px solid #1a1a1e}
+.accordion-item:last-child{border-bottom:none}
+.accordion-header{display:flex;align-items:center;gap:12px;padding:16px 20px;cursor:pointer;transition:background 0.15s}
+.accordion-header:hover{background:#18181c}
+.accordion-header .arrow{color:#52525b;font-size:12px;transition:transform 0.2s}
+.accordion-header.open .arrow{transform:rotate(90deg)}
+.accordion-header .cat-icon{font-size:18px}
+.accordion-header .cat-title{flex:1;font-size:14px;font-weight:600}
+.accordion-header .cat-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:4px}
+.accordion-body{padding:0 20px 16px 50px;display:none}
+.accordion-body.open{display:block}
+.checklist-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;font-size:13px}
+.checklist-item .check{color:#22c55e;margin-top:2px;flex-shrink:0}
+.checklist-item .x{color:#ef4444;margin-top:2px;flex-shrink:0}
+.checklist-item .warn{color:#f59e0b;margin-top:2px;flex-shrink:0}
+.progress-bar{height:6px;background:#1e1e22;border-radius:3px;margin-top:8px;overflow:hidden}
+.progress-bar .fill{height:100%;border-radius:3px;transition:width 0.3s}
+
+/* Questionnaire */
+.q-card{background:#111215;border:1px solid #1e1e22;border-radius:12px;padding:24px;margin-bottom:16px}
+.q-num{font-size:11px;font-weight:700;color:#c8a84e;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.q-text{font-size:15px;font-weight:500;margin-bottom:16px;line-height:1.5}
+.q-options{display:flex;gap:8px;flex-wrap:wrap}
+.q-opt{padding:8px 16px;border:1px solid #2a2a2e;border-radius:8px;font-size:13px;cursor:pointer;background:transparent;color:#a1a1aa;transition:all 0.15s}
+.q-opt:hover{border-color:#c8a84e;color:#c8a84e}
+.q-opt.selected{background:#c8a84e22;border-color:#c8a84e;color:#c8a84e}
+.q-help{font-size:11px;color:#52525b;margin-top:8px;font-style:italic}
+
+/* Footer */
+.footer{text-align:center;padding:32px;color:#3f3f46;font-size:12px}
+.footer a{color:#c8a84e;text-decoration:none}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1><span class="icon">&#9878;</span> SF Pay Transparency Readiness Checker</h1>
+  <span class="badge">EU Directive 2026</span>
+</div>
+
+<div class="container">
+
+  <!-- Directive Banner -->
+  <div class="directive-banner">
+    <div class="icon">&#9888;</div>
+    <div class="text">
+      <strong>EU Pay Transparency Directive — Compliance Deadline: June 2026</strong>
+      <p>Member states must transpose into national law. Employers with 100+ employees must publish pay gap data and enable worker pay disclosure rights.</p>
+    </div>
+    <div class="countdown">
+      <div class="num">38</div>
+      <div class="label">Days Left</div>
+    </div>
+  </div>
+
+  <!-- Scorecard -->
+  <div class="scorecard">
+    <div class="ring-card">
+      <div class="ring">
+        <svg width="140" height="140">
+          <circle cx="70" cy="70" r="60" fill="none" stroke="#1e1e22" stroke-width="8"/>
+          <circle cx="70" cy="70" r="60" fill="none" stroke="#f59e0b" stroke-width="8" stroke-dasharray="377" stroke-dashoffset="151" stroke-linecap="round"/>
+        </svg>
+        <div style="text-align:center">
+          <div class="score">60%</div>
+          <div class="label">Readiness</div>
+        </div>
+      </div>
+      <div class="verdict">Partially Ready</div>
+      <div class="subtext">6 of 10 checks passed</div>
+    </div>
+
+    <div class="detail-card">
+      <h2>Compliance Categories</h2>
+      <div class="cat-row">
+        <div class="cat-dot green"></div>
+        <div class="cat-name">Pay Grade Structure</div>
+        <div class="cat-status pass">Pass</div>
+        <div class="cat-score" style="color:#22c55e">100%</div>
+      </div>
+      <div class="cat-row">
+        <div class="cat-dot green"></div>
+        <div class="cat-name">Job Architecture</div>
+        <div class="cat-status pass">Pass</div>
+        <div class="cat-score" style="color:#22c55e">100%</div>
+      </div>
+      <div class="cat-row">
+        <div class="cat-dot green"></div>
+        <div class="cat-name">Compensation Data Model</div>
+        <div class="cat-status pass">Pass</div>
+        <div class="cat-score" style="color:#22c55e">95%</div>
+      </div>
+      <div class="cat-row">
+        <div class="cat-dot amber"></div>
+        <div class="cat-name">Worker Pay Disclosure Rights</div>
+        <div class="cat-status partial">Partial</div>
+        <div class="cat-score" style="color:#f59e0b">60%</div>
+      </div>
+      <div class="cat-row">
+        <div class="cat-dot amber"></div>
+        <div class="cat-name">Gender Pay Gap Reporting</div>
+        <div class="cat-status partial">Partial</div>
+        <div class="cat-score" style="color:#f59e0b">50%</div>
+      </div>
+      <div class="cat-row">
+        <div class="cat-dot red"></div>
+        <div class="cat-name">Hiring Pay Range Disclosure</div>
+        <div class="cat-status fail">Fail</div>
+        <div class="cat-score" style="color:#ef4444">20%</div>
+      </div>
+      <div class="cat-row">
+        <div class="cat-dot red"></div>
+        <div class="cat-name">Joint Pay Assessment Triggers</div>
+        <div class="cat-status fail">Fail</div>
+        <div class="cat-score" style="color:#ef4444">10%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active">Findings & Gaps <span class="count">14</span></button>
+    <button class="tab">Assessment</button>
+    <button class="tab">SF Config Paths</button>
+    <button class="tab">Export Report</button>
+  </div>
+
+  <!-- Findings Table -->
+  <div class="findings">
+    <div class="findings-header">
+      <div>Severity</div>
+      <div>Finding</div>
+      <div>Impact</div>
+      <div>Required Fix</div>
+      <div style="text-align:right">Status</div>
+    </div>
+    <div class="finding-row">
+      <div><div class="severity critical">&#9888;</div></div>
+      <div>
+        <div class="finding-title">No pay range on job requisitions</div>
+        <div class="finding-detail">EU job postings missing salary bands — directive Article 5 violation</div>
+      </div>
+      <div><span class="fix-path">RCM > Requisition Template > Custom Field</span></div>
+      <div>Custom MDF field on Requisition</div>
+      <div class="action-required">Required</div>
+    </div>
+    <div class="finding-row">
+      <div><div class="severity critical">&#9888;</div></div>
+      <div>
+        <div class="finding-title">Gender pay gap calculation not automated</div>
+        <div class="finding-detail">No WFA story or report exists for median pay gap by gender + job level</div>
+      </div>
+      <div><span class="fix-path">WFA > New Story > Pay Gap KPI</span></div>
+      <div>Build SAC report + schedule</div>
+      <div class="action-required">Required</div>
+    </div>
+    <div class="finding-row">
+      <div><div class="severity high">&#9650;</div></div>
+      <div>
+        <div class="finding-title">Employee cannot view own pay quartile</div>
+        <div class="finding-detail">Directive grants workers right to know their pay level relative to peers</div>
+      </div>
+      <div><span class="fix-path">EC > MDF > Employee Pay View Portlet</span></div>
+      <div>Enable Employee Profile portlet</div>
+      <div class="action-required">Required</div>
+    </div>
+    <div class="finding-row">
+      <div><div class="severity high">&#9650;</div></div>
+      <div>
+        <div class="finding-title">Pay grade externalCode not mapped to national bands</div>
+        <div class="finding-detail">DE and FR pay grades lack reference to official national classification</div>
+      </div>
+      <div><span class="fix-path">EC > Pay Grade > Manage Data</span></div>
+      <div>Update picklist values</div>
+      <div class="action-done">Advisory</div>
+    </div>
+    <div class="finding-row">
+      <div><div class="severity medium">&#9670;</div></div>
+      <div>
+        <div class="finding-title">Joint pay assessment trigger not configured</div>
+        <div class="finding-detail">>5% gender gap in any category triggers mandatory joint assessment with worker reps</div>
+      </div>
+      <div><span class="fix-path">EC > Business Rules > Gap Alert</span></div>
+      <div>Create rule + workflow</div>
+      <div class="action-done">Advisory</div>
+    </div>
+  </div>
+
+  <!-- Assessment Accordion -->
+  <h2 style="font-size:16px;font-weight:600;margin:32px 0 16px;color:#fff">Detailed Assessment by Category</h2>
+
+  <div class="accordion">
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+        <span class="arrow">&#9654;</span>
+        <span class="cat-icon">&#128176;</span>
+        <span class="cat-title">Pay Grade Structure</span>
+        <span class="cat-badge" style="background:#22c55e22;color:#22c55e">Pass — 100%</span>
+      </div>
+      <div class="accordion-body">
+        <div class="checklist-item"><span class="check">&#10004;</span> Pay Grade object exists with 42 grades across 8 countries</div>
+        <div class="checklist-item"><span class="check">&#10004;</span> Each grade has min/mid/max values defined in local currency</div>
+        <div class="checklist-item"><span class="check">&#10004;</span> Pay grades linked to job classifications via Pay Grade Group</div>
+        <div class="checklist-item"><span class="check">&#10004;</span> Effective-dated records maintained (no future gaps)</div>
+        <div class="progress-bar"><div class="fill" style="width:100%;background:#22c55e"></div></div>
+      </div>
+    </div>
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+        <span class="arrow">&#9654;</span>
+        <span class="cat-icon">&#127970;</span>
+        <span class="cat-title">Job Architecture</span>
+        <span class="cat-badge" style="background:#22c55e22;color:#22c55e">Pass — 100%</span>
+      </div>
+      <div class="accordion-body">
+        <div class="checklist-item"><span class="check">&#10004;</span> Job Classification hierarchy is clean (3 levels)</div>
+        <div class="checklist-item"><span class="check">&#10004;</span> All active positions have valid job codes</div>
+        <div class="checklist-item"><span class="check">&#10004;</span> Job families mapped to pay grades consistently</div>
+        <div class="progress-bar"><div class="fill" style="width:100%;background:#22c55e"></div></div>
+      </div>
+    </div>
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+        <span class="arrow">&#9654;</span>
+        <span class="cat-icon">&#128202;</span>
+        <span class="cat-title">Gender Pay Gap Reporting</span>
+        <span class="cat-badge" style="background:#f59e0b22;color:#f59e0b">Partial — 50%</span>
+      </div>
+      <div class="accordion-body">
+        <div class="checklist-item"><span class="check">&#10004;</span> Gender field populated for 99.2% of employees (EC data quality good)</div>
+        <div class="checklist-item"><span class="warn">&#9888;</span> WFA topic exists but no pre-built Pay Gap story — manual report only</div>
+        <div class="checklist-item"><span class="warn">&#9888;</span> No automated 5% threshold alert for joint pay assessment trigger</div>
+        <div class="checklist-item"><span class="x">&#10008;</span> No worker representative notification workflow configured</div>
+        <div class="progress-bar"><div class="fill" style="width:50%;background:#f59e0b"></div></div>
+      </div>
+    </div>
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+        <span class="arrow">&#9654;</span>
+        <span class="cat-icon">&#128221;</span>
+        <span class="cat-title">Hiring Pay Range Disclosure</span>
+        <span class="cat-badge" style="background:#ef444422;color:#ef4444">Fail — 20%</span>
+      </div>
+      <div class="accordion-body">
+        <div class="checklist-item"><span class="x">&#10008;</span> Requisition template has no pay range field</div>
+        <div class="checklist-item"><span class="x">&#10008;</span> Career Site Builder does not display salary on job postings</div>
+        <div class="checklist-item"><span class="warn">&#9888;</span> Offer Letter template references compensation but not range</div>
+        <div class="checklist-item"><span class="check">&#10004;</span> Compensation module has salary structure data available to reference</div>
+        <div class="progress-bar"><div class="fill" style="width:20%;background:#ef4444"></div></div>
+      </div>
+    </div>
+    <div class="accordion-item">
+      <div class="accordion-header" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+        <span class="arrow">&#9654;</span>
+        <span class="cat-icon">&#128101;</span>
+        <span class="cat-title">Worker Pay Disclosure Rights</span>
+        <span class="cat-badge" style="background:#f59e0b22;color:#f59e0b">Partial — 60%</span>
+      </div>
+      <div class="accordion-body">
+        <div class="checklist-item"><span class="check">&#10004;</span> Employee Profile portlet shows base pay (RBP permission exists)</div>
+        <div class="checklist-item"><span class="warn">&#9888;</span> No portlet showing pay quartile/percentile within peer group</div>
+        <div class="checklist-item"><span class="x">&#10008;</span> Workers cannot request pay comparison data — no self-service process</div>
+        <div class="progress-bar"><div class="fill" style="width:60%;background:#f59e0b"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Questionnaire Preview -->
+  <h2 style="font-size:16px;font-weight:600;margin:32px 0 16px;color:#fff">Quick Assessment (Sample Questions)</h2>
+
+  <div class="q-card">
+    <div class="q-num">Question 1 of 12</div>
+    <div class="q-text">Does your SF Employee Central instance have Pay Grades defined with minimum, midpoint, and maximum values for each grade?</div>
+    <div class="q-options">
+      <div class="q-opt selected">Yes — fully configured</div>
+      <div class="q-opt">Partial — some countries missing</div>
+      <div class="q-opt">No — not using Pay Grades</div>
+      <div class="q-opt">Not sure</div>
+    </div>
+    <div class="q-help">This is required under Article 4 of the directive for establishing comparable work categories.</div>
+  </div>
+
+  <div class="q-card">
+    <div class="q-num">Question 2 of 12</div>
+    <div class="q-text">Are job requisitions in Recruiting Management (RCM) configured to display the pay range/salary band on external job postings?</div>
+    <div class="q-options">
+      <div class="q-opt">Yes — visible on Career Site</div>
+      <div class="q-opt">Configured but hidden from candidates</div>
+      <div class="q-opt selected">No — pay range not captured</div>
+      <div class="q-opt">Not using RCM</div>
+    </div>
+    <div class="q-help">Article 5 requires employers to provide pay range information in job notices before interview. This applies to EU postings only.</div>
+  </div>
+
+  <div class="footer">
+    SAP SuccessFactors Pay Transparency Directive Readiness Checker &middot; 
+    Community Tool &middot; 
+    <a href="#">GitHub</a> &middot; 
+    <a href="#">Report Issue</a>
+    <br><span style="color:#27272a;margin-top:4px;display:inline-block">Mockup — not connected to any SF instance</span>
+  </div>
+
+</div>
+
+</body>
+</html>

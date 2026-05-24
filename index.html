@@ -3,10 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SF Pay Transparency Directive Readiness Checker</title>
+<title>SF Pay Transparency Readiness Checker | SAP SuccessFactors EU Pay Transparency Prototype</title>
+<meta name="description" content="A local SAP SuccessFactors readiness checker for the EU Pay Transparency Directive, covering pay ranges, job architecture, Article 7 requests, Article 9 reporting, Article 10 joint assessment workflows, OData evidence checks, and HRIS data quality.">
+<meta name="keywords" content="SAP SuccessFactors pay transparency, EU Pay Transparency Directive, SuccessFactors compensation, HRIS readiness, pay range disclosure, Article 9 gender pay gap reporting, Article 7 pay information request, Article 10 joint pay assessment, People Analytics, SAP HR technology">
+<meta name="author" content="Sahir Vhora">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://sahirvhora.github.io/sf-pay-transparency/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SF Pay Transparency Readiness Checker">
+<meta property="og:title" content="SAP SuccessFactors Pay Transparency Readiness Checker">
+<meta property="og:description" content="Explore EU Pay Transparency Directive readiness across SuccessFactors pay ranges, job architecture, compensation data, Article 9 reporting, and evidence workflows.">
+<meta property="og:url" content="https://sahirvhora.github.io/sf-pay-transparency/">
+<meta property="og:image" content="https://sahirvhora.github.io/sf-pay-transparency/assets/social-card.png">
+<meta property="og:image:alt" content="SAP SuccessFactors pay transparency readiness checker preview card">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SAP SuccessFactors Pay Transparency Readiness Checker">
+<meta name="twitter:description" content="A practical readiness prototype for EU Pay Transparency workstreams in SAP SuccessFactors.">
+<meta name="twitter:image" content="https://sahirvhora.github.io/sf-pay-transparency/assets/social-card.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "SF Pay Transparency Readiness Checker",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "description": "A local SAP SuccessFactors readiness checker prototype for EU Pay Transparency Directive preparation, HRIS data quality, pay range disclosure, Article 9 gender pay gap reporting, and evidence workflows.",
+  "url": "https://sahirvhora.github.io/sf-pay-transparency/",
+  "author": {
+    "@type": "Person",
+    "name": "Sahir Vhora"
+  },
+  "keywords": [
+    "SAP SuccessFactors",
+    "EU Pay Transparency Directive",
+    "pay transparency",
+    "HRIS",
+    "People Analytics",
+    "gender pay gap reporting",
+    "compensation data"
+  ]
+}
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#08090a;color:#e4e4e7;min-height:100vh}
+body.light{background:#f6f7f9;color:#111827}
 
 /* Top Bar */
 .topbar{background:#0f1012;border-bottom:1px solid #1e1e22;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
@@ -21,6 +64,9 @@ body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#08090a;colo
 
 /* Container */
 .container{max-width:1280px;margin:0 auto;padding:20px 24px 60px}
+.data-note{background:#111215;border:1px solid #1e1e22;border-radius:10px;padding:10px 14px;margin:-8px 0 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;color:#a1a1aa;font-size:11px}
+.data-note strong{color:#e4e4e7}
+.data-note span:last-child{color:#71717a}
 
 /* Directive Banner */
 .directive-banner{background:linear-gradient(135deg,#1a1205 0%,#1e1205 100%);border:1px solid #c8a84e33;border-radius:10px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:14px}
@@ -120,6 +166,9 @@ body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#08090a;colo
 .config-path h4{font-size:13px;font-weight:500;color:#e4e4e7;margin-bottom:6px}
 .config-path .path-steps{font-family:'JetBrains Mono',monospace;font-size:11px;color:#c8a84e;margin-bottom:6px;line-height:1.6}
 .config-path .path-desc{font-size:12px;color:#a1a1aa;line-height:1.5}
+.link-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.action-link{font-size:10px;color:#c8a84e;border:1px solid #c8a84e44;background:#c8a84e11;border-radius:5px;padding:4px 8px;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.action-link:hover{border-color:#c8a84e;color:#b89840}
 
 /* Questionnaire */
 .q-progress{background:#111215;border:1px solid #1e1e22;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
@@ -200,6 +249,21 @@ body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#08090a;colo
 .roadmap-stat{background:#111215;border:1px solid #1e1e22;border-radius:10px;padding:14px 16px;text-align:center}
 .roadmap-stat .val{font-size:22px;font-weight:700;color:#c8a84e}
 .roadmap-stat .lbl{font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+.evidence-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#111215;border:1px solid #1e1e22;border-radius:10px;padding:12px 14px;margin-bottom:14px;flex-wrap:wrap}
+.evidence-toolbar .controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.evidence-toolbar label{font-size:11px;color:#71717a;text-transform:uppercase;font-weight:600}
+.evidence-toolbar input,.evidence-toolbar select{width:90px;background:#0a0a0c;border:1px solid #2a2a2e;border-radius:6px;color:#e4e4e7;padding:7px 9px}
+.evidence-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.evidence-card{background:#111215;border:1px solid #1e1e22;border-radius:10px;padding:14px}
+.evidence-card .k{font-size:10px;color:#71717a;text-transform:uppercase;font-weight:700;letter-spacing:0.5px}
+.evidence-card .v{font-size:22px;color:#c8a84e;font-weight:700;margin-top:4px}
+.article-table{background:#111215;border:1px solid #1e1e22;border-radius:10px;overflow:hidden;margin-bottom:16px}
+.article-row,.article-head{display:grid;grid-template-columns:1fr 1.2fr repeat(6,.8fr);gap:8px;padding:10px 12px;border-top:1px solid #1a1a1e;font-size:11px;align-items:center}
+.article-head{border-top:none;background:#15151a;color:#71717a;text-transform:uppercase;font-weight:700}
+.evidence-entity{background:#111215;border:1px solid #1e1e22;border-radius:10px;margin-bottom:10px;overflow:hidden}
+.evidence-entity summary{cursor:pointer;padding:12px 14px;font-size:12px;font-weight:600}
+.evidence-body{padding:0 14px 14px;color:#a1a1aa;font-size:11px}
+.sample-pre{white-space:pre-wrap;background:#0a0a0c;border:1px solid #1a1a1e;border-radius:8px;padding:10px;overflow:auto;max-height:220px;margin-top:8px}
 .roadmap-phase{background:#111215;border:1px solid #1e1e22;border-radius:12px;margin-bottom:16px;overflow:hidden}
 .phase-header{display:flex;align-items:center;gap:12px;padding:16px 20px;cursor:pointer;user-select:none;transition:background 0.15s}
 .phase-header:hover{background:#18181c}
@@ -236,6 +300,23 @@ body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#08090a;colo
 .phase-check{font-size:11px;color:#71717a;margin-top:2px}
 @media(max-width:900px){.roadmap-summary{grid-template-columns:1fr}}
 
+/* Light theme */
+body.light .topbar,body.light .ring-card,body.light .detail-card,body.light .tabs,body.light .findings,body.light .accordion,body.light .q-card,body.light .q-progress,body.light .config-path,body.light .roadmap-stat,body.light .roadmap-phase,body.light .modal,body.light .toast,body.light .data-note{background:#fff;border-color:#d8dde6;color:#111827}
+body.light .topbar h1,body.light .cat-name,body.light .finding-title,body.light .config-section h3,body.light .config-path h4,body.light .ra-title,body.light .phase-title,body.light .modal-header h2,body.light .data-note strong{color:#111827}
+body.light .topbar-btn,body.light .tab,body.light .filter-btn,body.light .q-opt,body.light .test-btn,body.light .btn-cancel{border-color:#d8dde6;color:#4b5563;background:#fff}
+body.light .tab.active,body.light .filter-btn.active,body.light .phase-weeks,body.light .ra-tag,body.light .test-btn:hover,body.light .modal-close:hover{background:#eef2f7;color:#111827;border-color:#c8d0dc}
+body.light .findings-header{background:#f1f4f8;color:#6b7280}
+body.light .finding-row,body.light .cat-row,body.light .accordion-item{border-color:#e5e7eb}
+body.light .finding-row:hover,body.light .accordion-header:hover,body.light .phase-header:hover,body.light .roadmap-action:hover{background:#f8fafc}
+body.light .roadmap-action,body.light .form-group input,body.light .form-group select{background:#f8fafc;border-color:#d8dde6;color:#111827}
+body.light .evidence-toolbar,body.light .evidence-card,body.light .article-table,body.light .evidence-entity{background:#fff;border-color:#d8dde6;color:#111827}
+body.light .evidence-toolbar input,body.light .evidence-toolbar select,body.light .sample-pre{background:#f8fafc;border-color:#d8dde6;color:#111827}
+body.light .article-head{background:#f1f4f8;color:#6b7280}
+body.light .article-row{border-color:#e5e7eb}
+body.light .directive-banner{background:#fff8e6;border-color:#e7c35f;color:#111827}
+body.light .directive-banner .text p,body.light .finding-detail,body.light .config-path .path-desc,body.light .ra-desc,body.light .q-help,body.light .subtext,body.light .data-note,body.light .data-note span:last-child{color:#4b5563}
+body.light .progress-bar,body.light .q-progress .bar{background:#e5e7eb}
+
 /* Responsive */
 @media(max-width:900px){
   .scorecard{grid-template-columns:1fr}
@@ -253,8 +334,9 @@ body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#08090a;colo
   <h1><span class="icon">&#9878;</span> SF Pay Transparency Readiness</h1>
   <div class="topbar-right">
     <span id="instanceStatus"><span class="status-dot offline"></span>Demo Mode</span>
+    <button class="topbar-btn" id="themeBtn" onclick="toggleTheme()">☾ Dark</button>
     <button class="topbar-btn" onclick="openSettings()">&#9881; Settings</button>
-    <button class="topbar-btn" onclick="recalcScores()">&#8635; Recalculate</button>
+    <button class="topbar-btn" id="recalcBtn" onclick="refreshLiveChecks()">&#8635; Recalculate</button>
     <button class="topbar-btn" onclick="window.print()">&#128424; Print</button>
     <button class="topbar-btn" onclick="exportJSON()">&#128229; Export</button>
   </div>
@@ -266,13 +348,18 @@ body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#08090a;colo
   <div class="directive-banner">
     <div class="icon">&#9888;</div>
     <div class="text">
-      <strong>EU Pay Transparency Directive 2023/970 — Compliance Deadline: June 2026</strong>
-      <p>Employers with 100+ employees must publish gender pay gap data, disclose pay ranges in job postings, and grant workers the right to know their pay level relative to peers.</p>
+      <strong>EU Pay Transparency Directive 2023/970  -  Transposition Deadline: 7 June 2026</strong>
+      <p>Employers need defensible job architecture, applicant pay range disclosure, worker access to pay-setting criteria and pay-level information, and staged gender pay gap reporting from 2027.</p>
     </div>
     <div class="countdown">
       <div class="num" id="daysLeft">--</div>
       <div class="label">Days Left</div>
     </div>
+  </div>
+
+  <div class="data-note">
+    <span><strong>Prototype evidence mode:</strong> pulls complete OData metadata, then targeted capped samples from resolved SF APIs. Full-tenant audit mode and legal compliance certification are intentionally not enabled.</span>
+    <span id="lastRefreshLabel">Not refreshed yet</span>
   </div>
 
   <!-- Scorecard -->
@@ -305,6 +392,7 @@ body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#08090a;colo
     <button class="tab" data-tab="config">SF Config Paths</button>
     <button class="tab" data-tab="questionnaire">Questionnaire</button>
     <button class="tab" data-tab="roadmap">Roadmap</button>
+    <button class="tab" data-tab="evidence">Evidence Pack</button>
   </div>
 
   <!-- Findings Tab -->
@@ -344,6 +432,26 @@ body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#08090a;colo
     <div id="roadmapSummary" class="roadmap-summary"></div>
     <div id="roadmapBody"></div>
   </div>
+  <!-- Evidence Pack Tab -->
+  <div class="tab-content" id="tab-evidence">
+    <div class="evidence-toolbar">
+      <div>
+        <strong>Prototype Evidence Pack</strong>
+        <div style="font-size:11px;color:#71717a;margin-top:3px">Pulls paginated, capped evidence from resolved APIs and estimates Article 9 metrics where joins are available.</div>
+      </div>
+      <div class="controls">
+        <label for="evidenceLimit">Rows per API</label>
+        <input id="evidenceLimit" type="number" min="100" max="5000" step="100" value="1000" />
+        <label for="countryFilter">Country</label>
+        <select id="countryFilter" style="width:150px">
+          <option value="">All countries</option>
+        </select>
+        <button class="topbar-btn primary" id="evidenceBtn" onclick="generateEvidencePack()">Generate</button>
+        <button class="topbar-btn" onclick="downloadEvidencePack()">Download JSON</button>
+      </div>
+    </div>
+    <div id="evidenceBody"></div>
+  </div>
   <!-- Questionnaire Tab -->
   <div class="tab-content" id="tab-questionnaire">
     <div class="q-progress">
@@ -353,7 +461,7 @@ body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#08090a;colo
     <div id="questionnaireBody"></div>
     <div class="q-actions">
       <button class="topbar-btn" onclick="resetQuestionnaire()">Reset Answers</button>
-      <button class="topbar-btn primary" onclick="recalcScores()">Calculate Score</button>
+      <button class="topbar-btn primary" onclick="calculateQuestionnaireScore()">Calculate Score</button>
     </div>
   </div>
 
@@ -370,7 +478,7 @@ body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#08090a;colo
       <div class="form-group">
         <label>Authentication</label>
         <select id="authType" onchange="toggleAuthFields()">
-          <option value="basic">Basic Auth (username@CompanyID)</option>
+          <option value="basic">Basic Auth (Username/Password)</option>
           <option value="oauth2">OAuth2 Client Credentials</option>
         </select>
       </div>
@@ -397,8 +505,11 @@ body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#08090a;colo
         </div>
       </div>
       <div class="form-group">
-        <label>CORS Proxy (optional — for browser API calls)</label>
-        <input id="corsProxy" placeholder="http://localhost:8080/" />
+        <label>Legacy CORS Proxy (optional)</label>
+        <input id="corsProxy" placeholder="http://localhost:8081/" />
+      </div>
+      <div class="data-note" style="margin:12px 0 0">
+        <span><strong>Local prototype only:</strong> saved credentials are written to a gitignored local file with owner-only permissions. Use a vault, keyring, or OAuth before shared hosting.</span>
       </div>
       <div style="margin-top:12px">
         <button class="test-btn" id="testBtn" onclick="testConnection()">&#9655; Test Connection</button>
@@ -438,7 +549,7 @@ const CATEGORIES = [
   ]},
   { id: 'pay_disclosure', name: 'Worker Pay Disclosure Rights', icon: '\uD83D\uDC65', checks: [
     { id: 'pd_profile', text: 'Employee Profile portlet shows base pay (RBP permits)', weight: 30 },
-    { id: 'pd_quartile', text: 'Portlet showing pay quartile/percentile within peer group', weight: 35 },
+    { id: 'pd_avg_levels', text: 'Request output shows average pay levels by sex for same/equal-value category', weight: 35 },
     { id: 'pd_request', text: 'Self-service process for pay comparison requests', weight: 35 }
   ]},
   { id: 'gap_reporting', name: 'Gender Pay Gap Reporting', icon: '\uD83D\uDCC8', checks: [
@@ -453,7 +564,7 @@ const CATEGORIES = [
     { id: 'hd_offer', text: 'Offer Letter template references compensation range', weight: 30 }
   ]},
   { id: 'joint_assessment', name: 'Joint Pay Assessment Triggers', icon: '\u2696\uFE0F', checks: [
-    { id: 'ja_trigger', text: 'Business rule triggers on >5% gender pay gap', weight: 40 },
+    { id: 'ja_trigger', text: 'Business rule flags >=5% unexplained average pay level gaps', weight: 40 },
     { id: 'ja_workflow', text: 'Workflow notifies HR and worker representatives', weight: 35 },
     { id: 'ja_remediation', text: 'Remediation action tracking configured', weight: 25 }
   ]},
@@ -466,73 +577,73 @@ const CATEGORIES = [
 
 const QUESTIONS = [
   { id: 'q1', cat: 'pay_grade', text: 'Does your SF EC instance have Pay Grades defined with minimum, midpoint, and maximum values for each grade?', help: 'Required under Article 4 for establishing comparable work categories.', opts: [
-    { label: 'Yes — fully configured', score: 100 },
-    { label: 'Partial — some countries missing', score: 50 },
-    { label: 'No — not using Pay Grades', score: 0 },
+    { label: 'Yes  -  fully configured', score: 100 },
+    { label: 'Partial  -  some countries missing', score: 50 },
+    { label: 'No  -  not using Pay Grades', score: 0 },
     { label: 'Not sure', score: 25 }
   ]},
   { id: 'q2', cat: 'hiring_disclosure', text: 'Are job requisitions in RCM configured to display pay range/salary band on external job postings?', help: 'Article 5 requires pay range information in job notices before interview. Applies to EU postings.', opts: [
-    { label: 'Yes — visible on Career Site', score: 100 },
+    { label: 'Yes  -  visible on Career Site', score: 100 },
     { label: 'Configured but hidden from candidates', score: 30 },
-    { label: 'No — pay range not captured', score: 0 },
+    { label: 'No  -  pay range not captured', score: 0 },
     { label: 'Not using RCM', score: 0 }
   ]},
-  { id: 'q3', cat: 'pay_disclosure', text: 'Can employees view their own pay quartile or percentile relative to peers in the same job grade?', help: 'Article 7 grants workers the right to receive information on their individual pay level.', opts: [
-    { label: 'Yes — self-service portlet available', score: 100 },
-    { label: 'HR can provide on request (no self-service)', score: 30 },
-    { label: 'No — employees cannot see this', score: 0 },
+  { id: 'q3', cat: 'pay_disclosure', text: 'Can workers request and receive their individual pay level and average pay levels by sex for the same or equal-value worker category?', help: 'Article 7 requires written information within a reasonable period, no later than two months after the request.', opts: [
+    { label: 'Yes  -  governed self-service flow', score: 100 },
+    { label: 'HR can provide on request', score: 50 },
+    { label: 'Only current pay is visible', score: 20 },
     { label: 'Not configured', score: 0 }
   ]},
-  { id: 'q4', cat: 'gap_reporting', text: 'Do you have an automated report or WFA story that calculates gender pay gap by job category and country?', help: 'Article 9 requires reporting of gender pay gap at category level, disaggregated by worker category.', opts: [
-    { label: 'Yes — automated WFA/SAC story, scheduled', score: 100 },
+  { id: 'q4', cat: 'gap_reporting', text: 'Do you have an automated report or WFA story that calculates Article 9 gender pay gap measures by category, country, and pay component?', help: 'Article 9 includes mean and median gaps, variable components, quartile pay bands, and category-level gaps. First reporting is staged from 7 June 2027.', opts: [
+    { label: 'Yes  -  automated WFA/SAC story, scheduled', score: 100 },
     { label: 'Manual report exists but not automated', score: 40 },
-    { label: 'No — no pay gap analysis configured', score: 0 },
+    { label: 'No  -  no pay gap analysis configured', score: 0 },
     { label: 'In progress', score: 20 }
   ]},
-  { id: 'q5', cat: 'joint_assessment', text: 'Is there an automated alert or workflow triggered when gender pay gap exceeds 5% in any job category?', help: 'Article 9 mandates joint pay assessment with worker representatives when gap exceeds 5%.', opts: [
-    { label: 'Yes — business rule + workflow configured', score: 100 },
+  { id: 'q5', cat: 'joint_assessment', text: 'Is there an alert or workflow for categories where the average pay level gap is at least 5% and lacks objective, gender-neutral justification?', help: 'Article 10 requires a joint pay assessment only when the gap is unexplained and not remediated within six months of pay reporting.', opts: [
+    { label: 'Yes  -  business rule + workflow configured', score: 100 },
     { label: 'Manual process exists', score: 25 },
-    { label: 'No — nothing configured', score: 0 },
+    { label: 'No  -  nothing configured', score: 0 },
     { label: 'Not applicable (<100 employees)', score: 0 }
   ]},
   { id: 'q6', cat: 'comp_data', text: 'Is the gender field populated for 95%+ of active employees in EC?', help: 'Pay gap calculations require reliable gender data. Check Manage Data > PerPerson > gender.', opts: [
-    { label: 'Yes — 95%+ complete', score: 100 },
-    { label: 'Partial — 80-95% complete', score: 50 },
+    { label: 'Yes  -  95%+ complete', score: 100 },
+    { label: 'Partial  -  80-95% complete', score: 50 },
     { label: 'Below 80%', score: 10 },
     { label: 'Not sure', score: 25 }
   ]},
   { id: 'q7', cat: 'job_arch', text: 'Are all active positions mapped to valid job codes with a defined job classification?', help: 'Comparable work assessment requires consistent job classification across the organisation.', opts: [
-    { label: 'Yes — 100% of positions mapped', score: 100 },
-    { label: 'Most — some positions unmapped', score: 60 },
-    { label: 'No — many positions without job codes', score: 10 },
+    { label: 'Yes  -  100% of positions mapped', score: 100 },
+    { label: 'Most  -  some positions unmapped', score: 60 },
+    { label: 'No  -  many positions without job codes', score: 10 },
     { label: 'Not sure', score: 25 }
   ]},
-  { id: 'q8', cat: 'pay_disclosure', text: 'Do workers have a formal process to request pay comparison data (e.g., median pay for their peer group)?', help: 'Article 7 gives workers the right to request pay comparison information.', opts: [
-    { label: 'Yes — formal self-service process', score: 100 },
-    { label: 'Informal — HR handles via email/ticket', score: 40 },
+  { id: 'q8', cat: 'pay_disclosure', text: 'Do workers have a formal process to request pay comparison data for their same/equal-value worker category?', help: 'Article 7 allows workers to request information directly, through worker representatives, or through an equality body.', opts: [
+    { label: 'Yes  -  formal self-service process', score: 100 },
+    { label: 'Informal  -  HR handles via email/ticket', score: 40 },
     { label: 'No process exists', score: 0 },
     { label: 'Not configured', score: 0 }
   ]},
   { id: 'q9', cat: 'hiring_disclosure', text: 'Does your Career Site Builder show salary range or pay band on all EU job postings?', help: 'Article 5 applies to all job postings in EU member states. Non-EU postings are exempt.', opts: [
-    { label: 'Yes — all EU postings show range', score: 100 },
+    { label: 'Yes  -  all EU postings show range', score: 100 },
     { label: 'Some EU postings, not all', score: 40 },
     { label: 'No salary shown on any posting', score: 0 },
     { label: 'No Career Site (use external boards)', score: 10 }
   ]},
   { id: 'q10', cat: 'data_governance', text: 'Are there RBP permission rules restricting who can view and edit compensation data?', help: 'Pay data must be protected. Article 7 and GDPR require strict access controls.', opts: [
-    { label: 'Yes — granular RBP with field-level security', score: 100 },
+    { label: 'Yes  -  granular RBP with field-level security', score: 100 },
     { label: 'Basic RBP but no field-level controls', score: 50 },
-    { label: 'Minimal — most users can see pay data', score: 10 },
+    { label: 'Minimal  -  most users can see pay data', score: 10 },
     { label: 'Not sure', score: 25 }
   ]},
   { id: 'q11', cat: 'gap_reporting', text: 'Do you have a process to notify worker representatives when pay gap thresholds are exceeded?', help: 'Joint pay assessment must involve worker representatives (works council, union, etc.).', opts: [
-    { label: 'Yes — automated workflow with notification', score: 100 },
+    { label: 'Yes  -  automated workflow with notification', score: 100 },
     { label: 'Manual process via HR', score: 40 },
     { label: 'No process defined', score: 0 },
     { label: 'No worker representatives in scope', score: 0 }
   ]},
   { id: 'q12', cat: 'data_governance', text: 'Is there an audit trail for compensation data changes (who changed what, when)?', help: 'Pay transparency reporting requires historical data integrity. SF audit logs must be enabled.', opts: [
-    { label: 'Yes — full audit log enabled and monitored', score: 100 },
+    { label: 'Yes  -  full audit log enabled and monitored', score: 100 },
     { label: 'Audit log enabled but not monitored', score: 50 },
     { label: 'No audit trail for pay data', score: 0 },
     { label: 'Not sure', score: 25 }
@@ -540,15 +651,15 @@ const QUESTIONS = [
 ];
 
 const FINDINGS = [
-  { id: 'f1', severity: 'critical', title: 'No pay range on job requisitions', detail: 'EU job postings missing salary bands — directive Article 5 violation', cat: 'hiring_disclosure', fix: 'RCM > Requisition Template > Add Custom MDF Field for Pay Range', action: 'required', checkId: 'hd_req' },
-  { id: 'f2', severity: 'critical', title: 'Gender pay gap calculation not automated', detail: 'No WFA story or SAC report exists for median pay gap by gender + job level', cat: 'gap_reporting', fix: 'WFA > New Story > Pay Gap KPI > Schedule monthly', action: 'required', checkId: 'gr_wfa' },
-  { id: 'f3', severity: 'high', title: 'Employee cannot view own pay quartile', detail: 'Directive Article 7 grants workers right to know pay level relative to peers', cat: 'pay_disclosure', fix: 'EC > MDF > Create Employee Pay View Portlet', action: 'required', checkId: 'pd_quartile' },
-  { id: 'f4', severity: 'high', title: 'No joint pay assessment trigger', detail: '>5% gender gap in any category triggers mandatory joint assessment with worker reps', cat: 'joint_assessment', fix: 'EC > Business Rules > Create Gap Alert Rule + Workflow', action: 'required', checkId: 'ja_trigger' },
+  { id: 'f1', severity: 'critical', title: 'No pay range on job requisitions', detail: 'EU job postings missing salary bands  -  directive Article 5 violation', cat: 'hiring_disclosure', fix: 'RCM > Requisition Template > Add Custom MDF Field for Pay Range', action: 'required', checkId: 'hd_req' },
+  { id: 'f2', severity: 'critical', title: 'Gender pay gap calculation not automated', detail: 'No WFA story or SAC report exists for Article 9 pay gap measures by worker category and pay component', cat: 'gap_reporting', fix: 'WFA > New Story > Article 9 Pay Gap KPIs > Schedule review', action: 'required', checkId: 'gr_wfa' },
+  { id: 'f3', severity: 'high', title: 'Article 7 pay information response missing', detail: 'Workers must be able to request individual pay level and average pay levels by sex for same/equal-value categories', cat: 'pay_disclosure', fix: 'EC > MDF > Create Pay Information Request object + governed response pack', action: 'required', checkId: 'pd_avg_levels' },
+  { id: 'f4', severity: 'high', title: 'No joint pay assessment trigger', detail: 'A >=5% unexplained average pay level gap in any category requires joint assessment if not remediated within six months', cat: 'joint_assessment', fix: 'EC/WFA > Gap Alert > Justification Review > Workflow', action: 'required', checkId: 'ja_trigger' },
   { id: 'f5', severity: 'high', title: 'Pay grade externalCode not mapped to national bands', detail: 'DE and FR pay grades lack reference to official national classification systems', cat: 'pay_grade', fix: 'EC > Manage Data > Pay Grade > Add national_classification field', action: 'advisory', checkId: 'pg_mapped' },
   { id: 'f6', severity: 'medium', title: 'Career Site does not display salary', detail: 'Career Site Builder template not configured to surface pay range from requisition', cat: 'hiring_disclosure', fix: 'RCM > Career Site Builder > Edit Job Details Page > Add Pay Range component', action: 'required', checkId: 'hd_career' },
-  { id: 'f7', severity: 'medium', title: 'Worker representative notification missing', detail: 'No workflow to notify works council / union when pay gap threshold exceeded', cat: 'joint_assessment', fix: 'EC > Workflow > Create Joint Assessment Notification workflow', action: 'advisory', checkId: 'ja_workflow' },
+  { id: 'f7', severity: 'medium', title: 'Worker representative notification missing', detail: 'No workflow to involve works council / union when a qualifying joint assessment is required', cat: 'joint_assessment', fix: 'EC > Workflow > Create Joint Assessment Notification workflow', action: 'advisory', checkId: 'ja_workflow' },
   { id: 'f8', severity: 'medium', title: 'Gender field data quality below 95%', detail: 'Pay gap calculations unreliable if gender data incomplete', cat: 'comp_data', fix: 'EC > Manage Data > PerPerson > Run data quality report on gender field', action: 'required', checkId: 'cd_gender' },
-  { id: 'f9', severity: 'medium', title: 'No self-service pay comparison request process', detail: 'Workers must be able to request pay comparison information (Article 7)', cat: 'pay_disclosure', fix: 'EC > MDF > Create Pay Comparison Request object + workflow', action: 'advisory', checkId: 'pd_request' },
+  { id: 'f9', severity: 'medium', title: 'No governed pay information request process', detail: 'Workers must be informed annually of the right and the steps to request Article 7 information', cat: 'pay_disclosure', fix: 'EC > MDF > Create Pay Information Request object + workflow + annual notice', action: 'advisory', checkId: 'pd_request' },
   { id: 'f10', severity: 'medium', title: 'Offer Letter template lacks pay range reference', detail: 'Offer letters should reference the pay range from the job requisition', cat: 'hiring_disclosure', fix: 'ONB/EC > Offer Letter Template > Add pay range placeholder', action: 'advisory', checkId: 'hd_offer' },
   { id: 'f11', severity: 'low', title: 'Remediation action tracking not configured', detail: 'Joint pay assessment requires tracking of remediation actions taken', cat: 'joint_assessment', fix: 'EC > MDF > Create Remediation Action custom object', action: 'advisory', checkId: 'ja_remediation' },
   { id: 'f12', severity: 'low', title: 'Country-specific pay data visibility rules missing', detail: 'Pay data should be visible only to HR in the relevant country/region', cat: 'data_governance', fix: 'EC > RBP > Configure country-scoped permission groups for Comp data', action: 'advisory', checkId: 'dg_country' },
@@ -557,25 +668,25 @@ const FINDINGS = [
 ];
 
 const CONFIG_PATHS = [
-  { section: 'Employee Central — Pay Grades', paths: [
-    { title: 'Add Pay Range Field to Pay Grade', steps: 'Admin Center > Manage Data > Search: PayGrade > Edit > Add Custom Field: min_pay_range, max_pay_range > Save', desc: 'Create custom MDF fields on the Pay Grade object to store the minimum and maximum pay range for each grade in local currency.' },
-    { title: 'Map Pay Grades to Job Classifications', steps: 'Admin Center > Manage Data > Search: JobClassification > Edit > Link Pay Grade field > Set pay_grade_id for each job', desc: 'Ensure every Job Classification is linked to a Pay Grade. This enables comparable work assessment under the directive.' }
+  { section: 'Employee Central  -  Pay Grades', paths: [
+    { title: 'Add Pay Range Field to Pay Grade', steps: 'Admin Center > Configure Object Definitions > Search: PayGrade or FOPayRange > Add fields for min/mid/max pay > Save', desc: 'Create or verify MDF fields used to store minimum, midpoint, and maximum pay range values in local currency.', admin: 'Configure Object Definitions', help: 'https://help.sap.com/docs/SAP_SUCCESSFACTORS_PLATFORM/e4a4ce68589841709a8202928c23803a/configuring-object-definition' },
+    { title: 'Map Pay Grades to Job Classifications', steps: 'Admin Center > Manage Data > Search: JobClassification or FOJobCode > Link Pay Grade or Pay Range > Save', desc: 'Ensure every Job Classification or FOJobCode is linked to a Pay Grade or Pay Range. This enables comparable work assessment under the directive.', admin: 'Manage Data', help: 'https://help.sap.com/docs/SAP_SUCCESSFACTORS_PLATFORM/e4a4ce68589841709a8202928c23803a/c1fe3cd7f26a457f9831e278ca191e1f.html' }
   ]},
-  { section: 'Recruiting — Pay Range Disclosure', paths: [
-    { title: 'Add Pay Range to Requisition Template', steps: 'Admin Center > Manage Recruiting Templates > Requisition Template > Add Custom Field: pay_range > Set visibility: External > Link to Pay Grade', desc: 'Create a pay range field on the requisition that auto-populates from the linked Pay Grade min/max values.' },
-    { title: 'Display Pay Range on Career Site', steps: 'Admin Center > Career Site Builder > Job Details Page > Add Component: Custom Field (pay_range) > Publish', desc: 'Surface the pay range field from the requisition onto the public-facing career site job detail page for EU postings.' }
+  { section: 'Recruiting  -  Pay Range Disclosure', paths: [
+    { title: 'Add Pay Range to Requisition Template', steps: 'Admin Center > Manage Recruiting Templates > Requisition Template > Add Custom Field: pay_range > Set visibility: External > Link to Pay Grade', desc: 'Create a pay range field on the requisition that auto-populates from the linked Pay Grade min/max values.', admin: 'Manage Recruiting Templates', help: 'https://help.sap.com/docs/successfactors-recruiting/setting-up-and-maintaining-sap-successfactors-recruiting/job-requisitions-in-sap-successfactors' },
+    { title: 'Display Pay Range on Career Site', steps: 'Admin Center > Career Site Builder > Job Details Page > Add Component: Custom Field (pay_range) > Publish', desc: 'Surface the pay range field from the requisition onto the public-facing career site job detail page for EU postings.', admin: 'Career Site Builder', help: 'https://help.sap.com/docs/successfactors-recruiting/setting-up-and-maintaining-sap-successfactors-recruiting/career-site-builder' }
   ]},
-  { section: 'Employee Central — Worker Pay Disclosure', paths: [
-    { title: 'Create Employee Pay View Portlet', steps: 'Admin Center > Configure Employee Profile > Add Portlet > Custom MDF: Employee_Pay_View > Query: current pay + peer group quartile > Set RBP: read-only for employee', desc: 'Build a portlet on the Employee Profile page showing the employee current base pay and their quartile position within their peer group.' },
-    { title: 'Create Pay Comparison Request Object', steps: 'Admin Center > Configure Object Definitions > Create New MDF: Pay_Comparison_Request > Fields: employee_id, peer_group, request_date, status > Create Workflow to HR', desc: 'Allow employees to formally request pay comparison data. The MDF object tracks the request and routes it to HR for response.' }
+  { section: 'Employee Central  -  Worker Pay Disclosure', paths: [
+    { title: 'Create Pay Information Response View', steps: 'Admin Center > Configure Employee Profile > Add Portlet > Custom MDF: Pay_Info_Response > Fields: current pay level, worker category, average pay levels by sex > Set RBP: employee read-only', desc: 'Provide the worker their own pay level and the governed comparison figures for their same-work or equal-value worker category without exposing identifiable peer pay.', admin: 'Configure People Profile', help: 'https://help.sap.com/docs/successfactors-platform/using-role-based-permissions/latest-role-based-permissions?locale=en-us' },
+    { title: 'Create Pay Information Request Object', steps: 'Admin Center > Configure Object Definitions > Create New MDF: Pay_Info_Request > Fields: employee_id, worker_category, request_date, due_date, status > Create Workflow to HR', desc: 'Track Article 7 requests, route them to HR or worker representatives, and monitor the response deadline.', admin: 'Configure Object Definitions', help: 'https://help.sap.com/docs/SAP_SUCCESSFACTORS_PLATFORM/e4a4ce68589841709a8202928c23803a/configuring-object-definition' }
   ]},
-  { section: 'Business Rules — Pay Gap Alerts', paths: [
-    { title: 'Create 5% Gap Alert Rule', steps: 'Admin Center > Configure Business Rules > Create Rule: IF gender_pay_gap > 5% FOR job_category THEN trigger "Joint Assessment Required"', desc: 'Business rule that fires when the calculated gender pay gap for any job category exceeds the 5% threshold.' },
-    { title: 'Joint Assessment Notification Workflow', steps: 'Admin Center > Manage Organization > Workflows > Create: Joint Assessment > Trigger: Gap Alert Rule > Approvers: HR Director + Works Council Rep', desc: 'Workflow that notifies HR leadership and worker representatives when a joint pay assessment is triggered.' }
+  { section: 'Business Rules  -  Pay Gap Alerts', paths: [
+    { title: 'Create 5% Gap Alert Rule', steps: 'Admin Center > Configure Business Rules > Create Rule: IF average_pay_level_gap >= 5% AND no objective_justification THEN trigger "Joint Assessment Review"', desc: 'Business rule that flags categories where the Article 10 threshold may apply and starts a justification or remediation review.', admin: 'Configure Business Rules', help: 'https://help.sap.com/docs/successfactors-platform/implementing-business-rules-in-sap-successfactors/process-overview-for-configuring-business-rules' },
+    { title: 'Joint Assessment Notification Workflow', steps: 'Admin Center > Manage Organization > Workflows > Create: Joint Assessment > Trigger: Unremediated Gap After Six Months > Approvers: HR Director + Works Council Rep', desc: 'Workflow that notifies HR leadership and worker representatives when a qualifying gap remains unexplained or unresolved after the reporting window.', admin: 'Manage Organization, Pay and Job Structures', help: 'https://help.sap.com/doc/047cf17e14e34ff4bd57f1c0c6fd8894/2511/en-US/SF_EC_Workflows.pdf' }
   ]},
-  { section: 'Workforce Analytics — Pay Gap Reporting', paths: [
-    { title: 'Build Pay Gap Story in SAC', steps: 'SAP Analytics Cloud > Create Story > Data Source: WFA > Measure: Median Base Pay > Dimension: Gender, Job Category, Country > Filter: Active employees', desc: 'Create an SAC story that calculates and displays the gender pay gap (median difference) broken down by job category and country.' },
-    { title: 'Schedule Monthly Pay Gap Report', steps: 'SAC > Schedule > Monthly on 1st > Distribute to: HR Director, DEI Lead, Works Council > Format: PDF + Excel', desc: 'Automate distribution of the pay gap report to key stakeholders on a monthly schedule.' }
+  { section: 'Workforce Analytics  -  Pay Gap Reporting', paths: [
+    { title: 'Build Pay Gap Story in Report Center', steps: 'Admin Center > Report Center > New > Story > Measures: mean pay, median pay, variable components, quartile bands > Dimensions: Gender, Worker Category, Country > Filter: Active employees', desc: 'Create a People Analytics Story that calculates Article 9 measures, including category-level gaps by ordinary basic pay and complementary or variable components.', admin: 'Report Center', help: 'https://help.sap.com/docs/SAP_SUCCESSFACTORS_PEOPLE_ANALYTICS/deb510367ec844b4bc84b8c52442f5e5/1e471f3f6f3d4fddbcb839a8fa189297.html' },
+    { title: 'Schedule Monthly Pay Gap Report', steps: 'Admin Center > Report Center > Schedule > Monthly on 1st > Distribute to: HR Director, DEI Lead, Works Council > Format: PDF + Excel', desc: 'Automate distribution of the pay gap report to key stakeholders on a monthly schedule.', admin: 'Report Center', help: 'https://help.sap.com/docs/SAP_SUCCESSFACTORS_PEOPLE_ANALYTICS/deb510367ec844b4bc84b8c52442f5e5/1e471f3f6f3d4fddbcb839a8fa189297.html' }
   ]}
 ];
 
@@ -592,10 +703,10 @@ const ROADMAP_PHASES = [
     { id: 'ra6', title: 'Scope country-specific pay visibility rules', module: 'RBP', moduleClass: 'rbP', desc: 'Document which HR roles should see pay data in which countries. Prepare RBP permission group changes (implementation in Phase 2).', effort: '3-4 hours', skill: 'Admin + HR', deps: [], findings: ['f12'], link: 'Admin Center > RBP > Review permission groups' },
   ]},
   { id: 'p2', name: 'Phase 2 - Core Compliance', weeks: '3-6 weeks', desc: 'Build the mandatory reporting and disclosure features required by the directive.', color: '#f59e0b', actions: [
-    { id: 'ra7', title: 'Build WFA Pay Gap Story in SAC', module: 'WFA', moduleClass: 'wfa', desc: 'Create SAP Analytics Cloud story calculating gender pay gap (median base pay difference) by job category, country, and grade level. Schedule monthly distribution to HR Director, DEI Lead, and Works Council.', effort: '1-2 weeks', skill: 'WFA Developer', deps: ['ra4'], findings: ['f2'], link: 'SAC > Create Story > WFA data source > Median pay by gender' },
-    { id: 'ra8', title: 'Create Employee Pay View Portlet', module: 'EC', moduleClass: 'ec', desc: 'Build MDF-based portlet on Employee Profile showing current base pay and quartile position within peer group (same job grade + country). Configure RBP for employee read-only access.', effort: '1-2 weeks', skill: 'MDF Developer', deps: [], findings: ['f3'], link: 'Admin Center > Configure Object Definitions > Create Employee_Pay_View MDF' },
-    { id: 'ra9', title: 'Create 5% Gap Alert Business Rule', module: 'EC', moduleClass: 'ec', desc: 'Build EC business rule that triggers when gender pay gap exceeds 5% in any job category. Rule should create an incident and notify the HR Director.', effort: '3-5 days', skill: 'Business Rules', deps: ['ra7'], findings: ['f4'], link: 'Admin Center > Configure Business Rules > Create Gap Alert rule' },
-    { id: 'ra10', title: 'Build Pay Comparison Request Process', module: 'EC', moduleClass: 'ec', desc: 'Create MDF object for employee pay comparison requests with workflow routing to HR. Employees submit request -> HR reviews -> response within 14 days.', effort: '1 week', skill: 'MDF Developer', deps: ['ra8'], findings: ['f9'], link: 'Admin Center > Configure Object Definitions > Pay_Comparison_Request MDF + Workflow' },
+    { id: 'ra7', title: 'Build Article 9 Pay Gap Story in SAC', module: 'WFA', moduleClass: 'wfa', desc: 'Create SAP Analytics Cloud story calculating mean and median gender pay gaps, variable component gaps, quartile pay bands, and category-level gaps by country. Schedule review with HR, Legal, DEI, and worker representatives.', effort: '1-2 weeks', skill: 'WFA Developer', deps: ['ra4'], findings: ['f2'], link: 'SAC > Create Story > WFA data source > Article 9 pay gap measures' },
+    { id: 'ra8', title: 'Create Pay Information Response View', module: 'EC', moduleClass: 'ec', desc: 'Build MDF-based response view showing current individual pay level and average pay levels by sex for the same/equal-value worker category. Configure RBP and privacy suppression rules to prevent identifiable peer pay disclosure.', effort: '1-2 weeks', skill: 'MDF Developer', deps: [], findings: ['f3'], link: 'Admin Center > Configure Object Definitions > Create Pay_Info_Response MDF' },
+    { id: 'ra9', title: 'Create 5% Gap Review Business Rule', module: 'EC', moduleClass: 'ec', desc: 'Build a rule that flags category-level average pay gaps of at least 5%, routes objective justification review, and escalates if the gap is not remediated within six months.', effort: '3-5 days', skill: 'Business Rules', deps: ['ra7'], findings: ['f4'], link: 'Admin Center > Configure Business Rules > Create Gap Review rule' },
+    { id: 'ra10', title: 'Build Pay Information Request Process', module: 'EC', moduleClass: 'ec', desc: 'Create MDF object for Article 7 pay information requests with workflow routing to HR or worker representatives. Track request date, due date, response status, and annual worker notification evidence.', effort: '1 week', skill: 'MDF Developer', deps: ['ra8'], findings: ['f9'], link: 'Admin Center > Configure Object Definitions > Pay_Info_Request MDF + Workflow' },
     { id: 'ra11', title: 'Implement Country-Scoped RBP for Pay Data', module: 'EC', moduleClass: 'ec', desc: 'Configure RBP permission groups so HR users can only view/edit compensation data for their assigned country/region. Apply field-level security.', effort: '3-5 days', skill: 'RBP Admin', deps: ['ra6'], findings: ['f12'], link: 'Admin Center > RBP > Create country-scoped permission groups > Field-level security' },
   ]},
   { id: 'p3', name: 'Phase 3 - Advanced & Governance', weeks: '7-12 weeks', desc: 'Complete the joint assessment workflow, remediation tracking, and executive oversight.', color: '#f97316', actions: [
@@ -612,9 +723,17 @@ let state = {
   connected: false,
   baseUrl: '',
   companyId: '',
+  username: '',
   corsProxy: '',
+  hasSavedPassword: false,
+  lastRefresh: '',
+  theme: 'dark',
   answers: {},
   checkResults: {},
+  resolvedEntities: {},
+  dataPullMode: {},
+  evidencePack: null,
+  countryOptions: [],
   currentFilter: 'all'
 };
 
@@ -627,9 +746,17 @@ function loadState() {
       state.answers = parsed.answers || {};
       state.baseUrl = parsed.baseUrl || '';
       state.companyId = parsed.companyId || '';
+      state.username = parsed.username || '';
       state.corsProxy = parsed.corsProxy || '';
       state.connected = parsed.connected || false;
+      state.hasSavedPassword = parsed.hasSavedPassword || false;
+      state.lastRefresh = parsed.lastRefresh || '';
+      state.theme = parsed.theme || 'dark';
       state.checkResults = parsed.checkResults || {};
+      state.resolvedEntities = parsed.resolvedEntities || {};
+      state.dataPullMode = parsed.dataPullMode || {};
+      state.evidencePack = parsed.evidencePack || null;
+      state.countryOptions = parsed.countryOptions || [];
     }
   } catch(e) {}
 }
@@ -640,9 +767,17 @@ function saveState() {
       answers: state.answers,
       baseUrl: state.baseUrl,
       companyId: state.companyId,
+      username: state.username,
       corsProxy: state.corsProxy,
       connected: state.connected,
-      checkResults: state.checkResults
+      hasSavedPassword: state.hasSavedPassword,
+      lastRefresh: state.lastRefresh,
+      theme: state.theme,
+      checkResults: state.checkResults,
+      resolvedEntities: state.resolvedEntities,
+      dataPullMode: state.dataPullMode,
+      evidencePack: state.evidencePack,
+      countryOptions: state.countryOptions
     }));
   } catch(e) {}
 }
@@ -651,17 +786,44 @@ function saveState() {
 
 function init() {
   loadState();
+  applyTheme();
+  loadSavedCredentials();
   renderDaysLeft();
   renderCategories();
   renderFindings();
   renderAccordion();
   renderConfigPaths();
   renderRoadmap();
+  renderEvidencePack();
+  renderCountryOptions();
   renderQuestionnaire();
   updateTabCounts();
   bindTabs();
   bindFilters();
   recalcScores();
+  updateRefreshLabel();
+}
+
+function toggleTheme() {
+  state.theme = state.theme === 'light' ? 'dark' : 'light';
+  applyTheme();
+  saveState();
+}
+
+function applyTheme() {
+  document.body.classList.toggle('light', state.theme === 'light');
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = state.theme === 'light' ? '☀ Light' : '☾ Dark';
+}
+
+function updateRefreshLabel() {
+  const el = document.getElementById('lastRefreshLabel');
+  if (!el) return;
+  if (!state.lastRefresh) {
+    el.textContent = 'Not refreshed yet';
+    return;
+  }
+  el.textContent = `Last refreshed ${new Date(state.lastRefresh).toLocaleString()}`;
 }
 
 function renderDaysLeft() {
@@ -700,26 +862,31 @@ function getCatScore(catId) {
       totalWeight += ch.weight;
       earnedWeight += ch.weight * (result / 100);
     }
-    // Also check if questionnaire covers this
-    const qForCheck = QUESTIONS.find(q => q.cat === catId);
-    // Questionnaire contributes if no direct check result
   });
-  // Include questionnaire scores
+  const apiScore = totalWeight > 0 ? Math.round((earnedWeight / totalWeight) * 100) : null;
   const qAnswers = QUESTIONS.filter(q => q.cat === catId && state.answers[q.id] !== undefined);
-  if (qAnswers.length > 0 && totalWeight === 0) {
-    let qScore = 0;
-    qAnswers.forEach(q => { qScore += state.answers[q.id]; });
-    return Math.round(qScore / qAnswers.length);
-  }
-  if (totalWeight === 0) return 0;
-  return Math.round((earnedWeight / totalWeight) * 100);
+  const qScore = qAnswers.length > 0
+    ? Math.round(qAnswers.reduce((sum, q) => sum + state.answers[q.id], 0) / qAnswers.length)
+    : null;
+  if (apiScore !== null && qScore !== null) return Math.round((apiScore * 0.7) + (qScore * 0.3));
+  if (apiScore !== null) return apiScore;
+  if (qScore !== null) return qScore;
+  return 0;
+}
+
+function getQuestionnaireScore() {
+  const answered = Object.keys(state.answers).length;
+  if (!answered) return null;
+  const total = Object.values(state.answers).reduce((sum, score) => sum + score, 0);
+  return Math.round(total / answered);
 }
 
 function getOverallScore() {
   let total = 0, count = 0;
+  const hasAssessmentData = Object.keys(state.answers).length > 0 || Object.keys(state.checkResults).length > 0;
   CATEGORIES.forEach(cat => {
     const s = getCatScore(cat.id);
-    if (s > 0 || Object.keys(state.answers).length > 0) {
+    if (hasAssessmentData) {
       total += s;
       count++;
     }
@@ -743,6 +910,7 @@ function recalcScores() {
   const completed = getCompletedChecks();
   const answered = Object.keys(state.answers).length;
   const totalData = completed.done + answered;
+  const qScore = getQuestionnaireScore();
 
   // Update ring
   const circumference = 314;
@@ -760,8 +928,8 @@ function recalcScores() {
   document.getElementById('scoreVerdict').style.color = color;
 
   document.getElementById('scoreSubtext').textContent = completed.done > 0
-    ? `${completed.done} of ${completed.total} API checks + ${answered} questions answered`
-    : `${answered} of ${QUESTIONS.length} questions answered`;
+    ? `${completed.done} of ${completed.total} API checks + ${answered} questions answered${qScore !== null ? ` (questionnaire ${qScore}%)` : ''}`
+    : `${answered} of ${QUESTIONS.length} questions answered${qScore !== null ? ` (questionnaire ${qScore}%)` : ''}`;
 
   renderCategories();
   renderFindings();
@@ -769,6 +937,7 @@ function recalcScores() {
   renderRoadmap();
   updateTabCounts();
   saveState();
+  if (answered > 0) showToast(`Score calculated: ${overall}%`, 'success');
 }
 
 // ==================== FINDINGS ====================
@@ -929,6 +1098,7 @@ function renderRoadmap() {
           })
         ? '<span class="ra-tag" style="color:#ef4444">Required</span>'
         : '<span class="ra-tag">Advisory</span>';
+      const actionLinks = renderActionLinks(a.link, getHelpForModule(a.module));
       return `<div class="roadmap-action">
         <div class="ra-top">
           <span class="ra-title">${isResolved ? '\u2705 ' : ''}${a.title}</span>
@@ -941,6 +1111,7 @@ function renderRoadmap() {
           ${statusTag}
           ${depsHtml}
         </div>
+        ${actionLinks}
       </div>`;
     }).join('');
     return `<div class="roadmap-phase">
@@ -972,20 +1143,223 @@ function findActionInOtherPhase(actionId) {
   return null;
 }
 
+function getHelpForModule(moduleName) {
+  const key = (moduleName || '').toLowerCase();
+  if (key === 'rcm') return 'https://help.sap.com/docs/successfactors-recruiting/setting-up-and-maintaining-sap-successfactors-recruiting/job-requisitions-in-sap-successfactors';
+  if (key === 'rbp') return 'https://help.sap.com/docs/successfactors-platform/using-role-based-permissions/latest-role-based-permissions?locale=en-us';
+  if (key === 'wfa') return 'https://help.sap.com/docs/SAP_SUCCESSFACTORS_PEOPLE_ANALYTICS/deb510367ec844b4bc84b8c52442f5e5/1e471f3f6f3d4fddbcb839a8fa189297.html';
+  if (key === 'onb') return 'https://help.sap.com/docs/successfactors-recruiting/setting-up-and-maintaining-sap-successfactors-recruiting/creating-offer-letter-templates';
+  return 'https://help.sap.com/docs/SAP_SUCCESSFACTORS_PLATFORM/e4a4ce68589841709a8202928c23803a/configuring-object-definition';
+}
+
+// ==================== EVIDENCE PACK ====================
+
+async function loadCountryOptions() {
+  if (!state.hasSavedPassword) return;
+  try {
+    const resp = await fetch('/api/countries');
+    const data = await resp.json();
+    if (resp.ok && data.ok) {
+      state.countryOptions = data.countries || [];
+      renderCountryOptions();
+      saveState();
+    }
+  } catch (e) {
+    console.warn('Country options unavailable:', e);
+  }
+}
+
+function renderCountryOptions() {
+  const el = document.getElementById('countryFilter');
+  if (!el) return;
+  const selected = el.value;
+  const opts = ['<option value="">All countries</option>'].concat(
+    (state.countryOptions || []).map(c => {
+      const value = escapeHtml(c.value);
+      const countText = c.count ? ` - ${c.count}` : '';
+      const label = escapeHtml(`${c.label}${countText}`);
+      return `<option value="${value}">${label}</option>`;
+    })
+  );
+  el.innerHTML = opts.join('');
+  if ([...el.options].some(o => o.value === selected)) el.value = selected;
+}
+
+async function generateEvidencePack() {
+  if (!state.baseUrl || !state.username || !state.hasSavedPassword) {
+    showToast('No saved connection available. Open Settings first.', 'error');
+    return;
+  }
+  const btn = document.getElementById('evidenceBtn');
+  const oldText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  showToast('Generating evidence pack. This can take a minute...', 'success');
+  try {
+    const limit = Number(document.getElementById('evidenceLimit').value || 1000);
+    const country = document.getElementById('countryFilter').value;
+    const resp = await fetch('/api/evidence-pack', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        baseUrl: state.baseUrl,
+        companyId: state.companyId,
+        username: state.username,
+        limit,
+        country
+      })
+    });
+    const data = await resp.json();
+    if (!resp.ok || !data.ok) {
+      showToast(data.message || 'Evidence pack failed', 'error');
+      return;
+    }
+    state.evidencePack = data;
+    state.dataPullMode = data.dataPullMode || state.dataPullMode;
+    state.resolvedEntities = data.resolvedEntities || state.resolvedEntities;
+    saveState();
+    renderEvidencePack();
+    showToast('Evidence pack generated', 'success');
+  } catch (e) {
+    showToast(`Evidence pack failed: ${e.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
+function renderEvidencePack() {
+  const el = document.getElementById('evidenceBody');
+  if (!el) return;
+  const pack = state.evidencePack;
+  if (!pack) {
+    el.innerHTML = `<div class="data-note"><span><strong>No evidence pack yet.</strong> Generate one after saving a connection.</span><span>Recommended limit: 1000 rows per API</span></div>`;
+    return;
+  }
+  const entities = pack.evidence?.entities || {};
+  const cohort = pack.evidence?.cohort || {};
+  const entityEntries = Object.entries(entities);
+  const rowsPulled = entityEntries.reduce((sum, [, info]) => sum + (info.rowsPulled || 0), 0);
+  const article9 = pack.article9 || {};
+  const categories = article9.categoryResults || [];
+  const entityHtml = entityEntries.map(([purpose, info]) => `
+    <details class="evidence-entity">
+      <summary>${purpose} - ${info.entity || 'Not resolved'} (${info.rowsPulled || 0} rows)</summary>
+      <div class="evidence-body">
+        <div>Fields: ${(info.selectedFields || []).join(', ') || 'None'}</div>
+        <pre class="sample-pre">${escapeHtml(JSON.stringify(info.sampleRowsMasked || [], null, 2))}</pre>
+      </div>
+    </details>
+  `).join('');
+  const articleRows = categories.length
+    ? categories.map(r => `<div class="article-row">
+        <div>${escapeHtml(r.country)}</div>
+        <div>${escapeHtml(r.workerCategory)}</div>
+        <div>${r.employees}</div>
+        <div>${r.femaleCount}</div>
+        <div>${r.maleCount}</div>
+        <div>${r.meanGapPct}%</div>
+        <div>${r.medianGapPct}%</div>
+        <div>${r.jointAssessmentFlag ? 'Yes' : 'No'}</div>
+      </div>`).join('')
+    : `<div class="article-row" style="grid-template-columns:1fr">Insufficient joined pay, gender, and worker-category data for Article 9 calculations.</div>`;
+  const limitations = (article9.limitations || []).map(x => `<li>${escapeHtml(x)}</li>`).join('');
+  const diag = article9.joinDiagnostics || {};
+  const diagHtml = Object.keys(diag).length
+    ? `<div class="config-path">
+        <h4>Join Diagnostics</h4>
+        <div class="path-desc">
+          Comp rows: ${diag.compRows || 0} |
+          User rows: ${diag.userRows || 0} |
+          PerPersonal rows: ${diag.personalRows || 0} |
+          EmpEmployment rows: ${diag.employmentRows || 0} |
+          Gender by user: ${diag.genderByUserCount || 0} |
+          User-person links: ${diag.personByUserCount || 0} |
+          EmpJob rows: ${diag.empJobRows || 0} |
+          Position rows: ${diag.positionRows || 0}
+        </div>
+      </div>`
+    : '';
+  el.innerHTML = `
+    <div class="evidence-grid">
+      <div class="evidence-card"><div class="k">Resolved APIs</div><div class="v">${entityEntries.length}</div></div>
+      <div class="evidence-card"><div class="k">Rows Pulled</div><div class="v">${rowsPulled}</div></div>
+      <div class="evidence-card"><div class="k">Article 9 Status</div><div class="v">${escapeHtml(article9.status || 'n/a')}</div></div>
+    </div>
+    <div class="data-note">
+      <span><strong>Cohort:</strong> ${cohort.userCount || 0} users, ${cohort.personCount || 0} persons${pack.countryFilter ? `, country filter ${escapeHtml(pack.countryFilter)}` : ''}</span>
+      <span>Anchor: ${escapeHtml(cohort.anchor || 'metadata sample')}${cohort.strictCountryFilter && !cohort.matched ? ' - no matching employees found' : ''}</span>
+    </div>
+    <div class="article-table">
+      <div class="article-head">
+        <div>Country</div><div>Worker Category (Inferred)</div><div>Employees</div><div>Female</div><div>Male</div><div>Mean Gap</div><div>Median Gap</div><div>JPA</div>
+      </div>
+      ${articleRows}
+    </div>
+    <div class="data-note">
+      <span><strong>Worker category:</strong> inferred from available EmpJob/Position fields such as jobCode, payGrade, payRange, or position. Treat it as a working group, not a legally approved equal-value category yet.</span>
+      <span>Validate with HR/legal before reporting.</span>
+    </div>
+    <div class="config-path">
+      <h4>Article 9 Limitations</h4>
+      <div class="path-desc"><ul style="margin-left:16px">${limitations}</ul></div>
+    </div>
+    ${diagHtml}
+    ${entityHtml}
+  `;
+}
+
+function downloadEvidencePack() {
+  if (!state.evidencePack) {
+    showToast('Generate an evidence pack first', 'error');
+    return;
+  }
+  downloadJSON(state.evidencePack, `sf-pay-transparency-evidence-${new Date().toISOString().slice(0,10)}.json`);
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
 // ==================== CONFIG PATHS ====================
 
 function renderConfigPaths() {
   const el = document.getElementById('configPaths');
   el.innerHTML = CONFIG_PATHS.map(section => {
-    const pathsHtml = section.paths.map(p =>
-      `<div class="config-path">
+    const pathsHtml = section.paths.map(p => {
+      const links = renderActionLinks(p.admin, p.help);
+      return `<div class="config-path">
         <h4>${p.title}</h4>
         <div class="path-steps">${p.steps}</div>
         <div class="path-desc">${p.desc}</div>
-      </div>`
-    ).join('');
+        ${links}
+      </div>`;
+    }).join('');
     return `<div class="config-section"><h3>${section.section}</h3>${pathsHtml}</div>`;
   }).join('');
+}
+
+function renderActionLinks(adminSearch, helpUrl) {
+  const links = [];
+  const sfUrl = getSfAdminUrl(adminSearch);
+  if (sfUrl) links.push(`<a class="action-link" href="${sfUrl}" target="_blank" rel="noopener">Open SF Admin</a>`);
+  if (helpUrl) links.push(`<a class="action-link" href="${helpUrl}" target="_blank" rel="noopener">SAP Help</a>`);
+  return links.length ? `<div class="link-row">${links.join('')}</div>` : '';
+}
+
+function getSfAdminUrl(searchText) {
+  if (!state.baseUrl) return '';
+  try {
+    const u = new URL(state.baseUrl);
+    u.hostname = u.hostname.replace(/^api/i, 'hcm');
+    const params = state.companyId ? `?company=${encodeURIComponent(state.companyId)}` : '';
+    const search = searchText ? `&tool=${encodeURIComponent(searchText)}` : '';
+    return `${u.origin}/sf/admin${params}${search}`;
+  } catch(e) {
+    return '';
+  }
 }
 
 // ==================== QUESTIONNAIRE ====================
@@ -1014,6 +1388,11 @@ function answerQuestion(qId, score, el) {
   el.classList.add('selected');
   updateQProgress();
   saveState();
+}
+
+function calculateQuestionnaireScore() {
+  recalcScores();
+  document.querySelector('.tab[data-tab="assessment"]')?.click();
 }
 
 function updateQProgress() {
@@ -1054,6 +1433,9 @@ function openSettings() {
   document.getElementById('settingsModal').classList.add('open');
   document.getElementById('baseUrl').value = state.baseUrl;
   document.getElementById('companyId').value = state.companyId;
+  document.getElementById('apiUser').value = state.username || '';
+  document.getElementById('apiPass').value = '';
+  document.getElementById('apiPass').placeholder = state.hasSavedPassword ? '(saved locally)' : '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022';
   document.getElementById('corsProxy').value = state.corsProxy;
   document.getElementById('testResult').textContent = '';
 }
@@ -1075,7 +1457,7 @@ async function testConnection() {
   const apiPass = document.getElementById('apiPass').value.trim();
   const corsProxy = document.getElementById('corsProxy').value.trim();
 
-  if (!baseUrl || !companyId || !apiUser || !apiPass) {
+  if (!baseUrl || !companyId || !apiUser || (!apiPass && !state.hasSavedPassword)) {
     result.textContent = 'Fill in all fields first';
     result.className = 'test-result err';
     return;
@@ -1085,25 +1467,24 @@ async function testConnection() {
   btn.textContent = 'Testing...';
   result.textContent = '';
 
-  const authStr = btoa(`${apiUser}@${companyId}:${apiPass}`);
-  const headers = { 'Authorization': 'Basic ' + authStr };
-  const url = `${baseUrl}/odata/v2/User?$top=1&$select=firstName`;
-  const finalUrl = corsProxy ? corsProxy + url : url;
-
   try {
-    const resp = await fetch(finalUrl, { headers, method: 'GET' });
-    if (resp.ok || resp.status === 403) {
-      // 403 is still a valid auth (just no permission for User)
-      result.textContent = resp.ok ? 'Connected — authentication successful' : 'Connected — auth OK (User endpoint restricted, try a different entity)';
+    const backendResp = await fetch('/api/test-connection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ baseUrl, companyId, username: apiUser, password: apiPass })
+    });
+    const data = await backendResp.json();
+    if (backendResp.ok && data.ok) {
+      result.textContent = data.message || 'Connected  -  authentication successful';
       result.className = 'test-result ok';
       state.connected = true;
     } else {
-      result.textContent = `HTTP ${resp.status} — check credentials and URL`;
+      result.textContent = data.detail ? `${data.message}: ${data.detail}` : (data.message || `HTTP ${backendResp.status}  -  check credentials and URL`);
       result.className = 'test-result err';
       state.connected = false;
     }
   } catch (e) {
-    result.textContent = `Connection failed: ${e.message}. If CORS error, configure a proxy.`;
+    result.textContent = `Connection failed: ${e.message}. Start the app with python3 backend_server.py, not python3 -m http.server.`;
     result.className = 'test-result err';
     state.connected = false;
   }
@@ -1115,16 +1496,71 @@ async function testConnection() {
 async function saveConnection() {
   state.baseUrl = document.getElementById('baseUrl').value.replace(/\/+$/, '');
   state.companyId = document.getElementById('companyId').value.trim();
+  state.username = document.getElementById('apiUser').value.trim();
   state.corsProxy = document.getElementById('corsProxy').value.trim();
 
-  // Run live checks
-  await runLiveChecks();
+  const saved = await saveCredentials();
+  if (!saved) return;
+
+  await refreshLiveChecks(true);
 
   closeSettings();
-  updateStatus();
-  recalcScores();
-  saveState();
-  showToast('Connection saved and checks running', 'success');
+}
+
+async function loadSavedCredentials() {
+  try {
+    const resp = await fetch('/api/credentials');
+    const data = await resp.json();
+    if (resp.ok && data.ok) {
+      state.baseUrl = data.baseUrl || state.baseUrl;
+      state.companyId = data.companyId || state.companyId;
+      state.username = data.username || state.username;
+      state.hasSavedPassword = !!data.hasPassword;
+      if (state.hasSavedPassword && state.baseUrl) state.connected = true;
+      updateStatus();
+      updateRefreshLabel();
+      loadCountryOptions();
+      saveState();
+    }
+  } catch (e) {
+    console.warn('Saved credentials unavailable:', e);
+  }
+}
+
+async function saveCredentials() {
+  const result = document.getElementById('testResult');
+  const password = document.getElementById('apiPass').value;
+  if (!state.baseUrl || !state.companyId || !state.username || (!password && !state.hasSavedPassword)) {
+    result.textContent = 'Fill in all fields first';
+    result.className = 'test-result err';
+    return false;
+  }
+  try {
+    const resp = await fetch('/api/save-credentials', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        baseUrl: state.baseUrl,
+        companyId: state.companyId,
+        username: state.username,
+        password
+      })
+    });
+    const data = await resp.json();
+    if (!resp.ok || !data.ok) {
+      result.textContent = data.message || 'Could not save credentials';
+      result.className = 'test-result err';
+      return false;
+    }
+    state.hasSavedPassword = true;
+    state.connected = true;
+    saveState();
+    return true;
+  } catch (e) {
+    result.textContent = `Could not save credentials: ${e.message}`;
+    result.className = 'test-result err';
+    return false;
+  }
 }
 
 function updateStatus() {
@@ -1139,44 +1575,72 @@ function updateStatus() {
 // ==================== LIVE CHECKS ====================
 
 async function runLiveChecks() {
-  if (!state.connected || !state.baseUrl) return;
-
-  const authStr = btoa(`${document.getElementById('apiUser').value.trim()}@${state.companyId}:${document.getElementById('apiPass').value.trim()}`);
-  const headers = { 'Authorization': 'Basic ' + authStr };
-  const proxy = state.corsProxy || '';
-
-  // Helper for OData fetch
-  async function odataFetch(entity, params = '') {
-    const url = `${proxy}${state.baseUrl}/odata/v2/${entity}${params}`;
-    const resp = await fetch(url, { headers, method: 'GET' });
-    if (!resp.ok) return null;
-    return await resp.json();
+  if (!state.baseUrl || !state.username || !state.hasSavedPassword) {
+    showToast('No saved connection available. Open Settings first.', 'error');
+    return false;
   }
 
   try {
-    // Check PayGrade
-    const pg = await odataFetch('PayGrade', '?$top=1&$select=externalCode');
-    state.checkResults.pg_exists = pg && pg.results && pg.results.length > 0 ? 100 : 0;
-
-    // Check JobClassification
-    const jc = await odataFetch('JobClassification', '?$top=1&$select=externalCode');
-    state.checkResults.ja_hierarchy = jc && jc.results && jc.results.length > 0 ? 100 : 0;
-
-    // Check User gender data quality
-    const users = await odataFetch('User', '?$top=100&$select=firstName,gender');
-    if (users && users.results) {
-      const withGender = users.results.filter(u => u.gender).length;
-      const pct = Math.round((withGender / users.results.length) * 100);
-      state.checkResults.cd_gender = pct >= 95 ? 100 : pct >= 80 ? 50 : 10;
+    const resp = await fetch('/api/live-checks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        baseUrl: state.baseUrl,
+        companyId: state.companyId,
+        username: state.username || document.getElementById('apiUser')?.value.trim() || '',
+        password: document.getElementById('apiPass')?.value.trim() || ''
+      })
+    });
+    const data = await resp.json();
+    if (resp.ok && data.ok && data.checkResults) {
+      state.checkResults = { ...state.checkResults, ...data.checkResults };
+      state.resolvedEntities = data.resolvedEntities || {};
+      state.dataPullMode = data.dataPullMode || {};
+      state.connected = true;
+      state.lastRefresh = new Date().toISOString();
+      return true;
+    } else {
+      state.connected = false;
+      showToast(data.message || 'Live checks failed', 'error');
+      return false;
     }
-
-    // Check Position
-    const pos = await odataFetch('Position', '?$top=1&$select=externalCode');
-    state.checkResults.ja_positions = pos && pos.results && pos.results.length > 0 ? 80 : 0;
-
   } catch (e) {
     console.warn('Live checks failed:', e);
+    state.connected = false;
+    showToast(`Live checks failed: ${e.message}`, 'error');
+    return false;
   }
+}
+
+async function refreshLiveChecks(fromSave = false) {
+  const btn = document.getElementById('recalcBtn');
+  const oldText = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Refreshing...';
+  }
+  showToast('Refreshing live SuccessFactors checks...', 'success');
+  try {
+    const refreshed = await runLiveChecks();
+    if (!refreshed) return;
+    updateStatus();
+    recalcScores();
+    updateRefreshLabel();
+    saveState();
+    const when = state.lastRefresh ? new Date(state.lastRefresh).toLocaleTimeString() : new Date().toLocaleTimeString();
+    showToast(`${fromSave ? 'Saved and refreshed' : 'Refresh completed'} at ${when}`, 'success');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = oldText || '\u21BB Recalculate';
+    }
+  }
+}
+
+function proxiedUrl(url, proxy) {
+  if (!proxy) return url;
+  const normalized = proxy.replace(/\/+$/, '');
+  return `${normalized}/?url=${encodeURIComponent(url)}`;
 }
 
 // ==================== EXPORT ====================
@@ -1187,11 +1651,26 @@ function exportJSON() {
     generated: new Date().toISOString(),
     instance: state.connected ? state.baseUrl : 'demo',
     companyId: state.companyId,
+    refreshedAt: state.lastRefresh,
     overallScore: getOverallScore(),
     categories: CATEGORIES.map(cat => ({
       name: cat.name,
       score: getCatScore(cat.id)
     })),
+    resolvedEntities: state.resolvedEntities,
+    dataPullMode: state.dataPullMode,
+    checkResults: state.checkResults,
+    evidencePackSummary: state.evidencePack ? {
+      generatedAt: state.evidencePack.generatedAt,
+      limitPerEntity: state.evidencePack.limitPerEntity,
+      article9: state.evidencePack.article9,
+      evidenceEntities: Object.fromEntries(Object.entries(state.evidencePack.evidence?.entities || {}).map(([k, v]) => [k, {
+        entity: v.entity,
+        rowsPulled: v.rowsPulled,
+        selectedFields: v.selectedFields,
+        quality: v.quality
+      }]))
+    } : null,
     findings: FINDINGS.map(f => ({
       severity: f.severity,
       title: f.title,
@@ -1203,14 +1682,18 @@ function exportJSON() {
     }))
   };
 
-  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+  downloadJSON(report, `sf-pay-transparency-report-${new Date().toISOString().slice(0,10)}.json`);
+  showToast('Report exported', 'success');
+}
+
+function downloadJSON(payload, filename) {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `sf-pay-transparency-report-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
-  showToast('Report exported', 'success');
 }
 
 // ==================== TOAST ====================
