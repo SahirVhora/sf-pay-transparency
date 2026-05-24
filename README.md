@@ -1,10 +1,16 @@
 # SF Pay Transparency Readiness Checker
 
+[![SF Pay Transparency Readiness Checker preview](assets/social-card.svg)](https://sahirvhora.github.io/sf-pay-transparency/)
+
 A local SuccessFactors prototype for exploring readiness for the EU Pay Transparency Directive.
 
 The tool turns a broad regulatory topic into practical SuccessFactors questions: do you have pay ranges, usable job architecture, gender and compensation data coverage, worker request workflows, Article 9 reporting readiness, and evidence that can be reviewed?
 
 This is a practitioner readiness aid and discussion prototype. It is not legal advice, a certified compliance product, or a production tenant audit tool.
+
+**Live demo:** https://sahirvhora.github.io/sf-pay-transparency/
+
+**Keywords:** SAP SuccessFactors pay transparency, EU Pay Transparency Directive, HRIS readiness, compensation data quality, pay range disclosure, Article 7 pay information requests, Article 9 gender pay gap reporting, Article 10 joint pay assessment, People Analytics, Reward, SAP HR technology.
 
 ## Why This Exists
 
