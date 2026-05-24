@@ -1,0 +1,5 @@
+.pay_transparency_credentials.*
+.env
+.env.*
+__pycache__/
+*.pyc
