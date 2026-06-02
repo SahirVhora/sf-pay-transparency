@@ -349,7 +349,7 @@ body.light .progress-bar,body.light .q-progress .bar{background:#e5e7eb}
     <div class="icon">&#9888;</div>
     <div class="text">
       <strong>EU Pay Transparency Directive 2023/970  -  Transposition Deadline: 7 June 2026</strong>
-      <p>Employers need defensible job architecture, applicant pay range disclosure, worker access to pay-setting criteria and pay-level information, and staged gender pay gap reporting from 2027.</p>
+      <p>Employers need defensible job architecture, applicant pay range disclosure, worker access to pay-setting criteria and pay-level information, and staged gender pay gap reporting from 2027 based on workforce size.</p>
     </div>
     <div class="countdown">
       <div class="num" id="daysLeft">--</div>
@@ -358,7 +358,7 @@ body.light .progress-bar,body.light .q-progress .bar{background:#e5e7eb}
   </div>
 
   <div class="data-note">
-    <span><strong>Prototype evidence mode:</strong> pulls complete OData metadata, then targeted capped samples from resolved SF APIs. Full-tenant audit mode and legal compliance certification are intentionally not enabled.</span>
+    <span><strong>Prototype evidence mode:</strong> pulls complete OData metadata, then targeted capped samples from resolved SF APIs when live mode is enabled locally. Full-tenant audit mode and legal compliance certification are intentionally not enabled.</span>
     <span id="lastRefreshLabel">Not refreshed yet</span>
   </div>
 
@@ -509,7 +509,7 @@ body.light .progress-bar,body.light .q-progress .bar{background:#e5e7eb}
         <input id="corsProxy" placeholder="http://localhost:8081/" />
       </div>
       <div class="data-note" style="margin:12px 0 0">
-        <span><strong>Local prototype only:</strong> saved credentials are written to a gitignored local file with owner-only permissions. Use a vault, keyring, or OAuth before shared hosting.</span>
+        <span><strong>Local prototype only:</strong> start the backend with <code>SFPT_LIVE_MODE=1</code> before saving tenant credentials. Saved credentials are written to a gitignored local file with owner-only permissions. Use a vault, keyring, or OAuth before shared hosting.</span>
       </div>
       <div style="margin-top:12px">
         <button class="test-btn" id="testBtn" onclick="testConnection()">&#9655; Test Connection</button>
@@ -594,7 +594,7 @@ const QUESTIONS = [
     { label: 'Only current pay is visible', score: 20 },
     { label: 'Not configured', score: 0 }
   ]},
-  { id: 'q4', cat: 'gap_reporting', text: 'Do you have an automated report or WFA story that calculates Article 9 gender pay gap measures by category, country, and pay component?', help: 'Article 9 includes mean and median gaps, variable components, quartile pay bands, and category-level gaps. First reporting is staged from 7 June 2027.', opts: [
+  { id: 'q4', cat: 'gap_reporting', text: 'Do you have an automated report or WFA story that calculates Article 9-style gender pay gap measures by category, country, and pay component?', help: 'Article 9 includes mean and median gaps, variable components, quartile pay bands, and category-level gaps. First reporting is staged by worker count from 7 June 2027.', opts: [
     { label: 'Yes  -  automated WFA/SAC story, scheduled', score: 100 },
     { label: 'Manual report exists but not automated', score: 40 },
     { label: 'No  -  no pay gap analysis configured', score: 0 },
@@ -604,7 +604,7 @@ const QUESTIONS = [
     { label: 'Yes  -  business rule + workflow configured', score: 100 },
     { label: 'Manual process exists', score: 25 },
     { label: 'No  -  nothing configured', score: 0 },
-    { label: 'Not applicable (<100 employees)', score: 0 }
+    { label: 'Not currently in Article 9 reporting scope', score: 25 }
   ]},
   { id: 'q6', cat: 'comp_data', text: 'Is the gender field populated for 95%+ of active employees in EC?', help: 'Pay gap calculations require reliable gender data. Check Manage Data > PerPerson > gender.', opts: [
     { label: 'Yes  -  95%+ complete', score: 100 },
@@ -647,15 +647,21 @@ const QUESTIONS = [
     { label: 'Audit log enabled but not monitored', score: 50 },
     { label: 'No audit trail for pay data', score: 0 },
     { label: 'Not sure', score: 25 }
+  ]},
+  { id: 'q13', cat: 'gap_reporting', text: 'Which Article 9 reporting threshold currently applies to the employer population you are assessing?', help: 'EU baseline reporting is staged by worker count: 250+ and 150-249 from 7 June 2027, then 100-149 from 7 June 2031. National transposition may add stricter rules.', opts: [
+    { label: '250+ workers - annual reporting path', score: 100 },
+    { label: '150-249 workers - 2027 three-year path', score: 85 },
+    { label: '100-149 workers - 2031 path', score: 60 },
+    { label: 'Below 100 or country rule unknown', score: 25 }
   ]}
 ];
 
 const FINDINGS = [
-  { id: 'f1', severity: 'critical', title: 'No pay range on job requisitions', detail: 'EU job postings missing salary bands  -  directive Article 5 violation', cat: 'hiring_disclosure', fix: 'RCM > Requisition Template > Add Custom MDF Field for Pay Range', action: 'required', checkId: 'hd_req' },
-  { id: 'f2', severity: 'critical', title: 'Gender pay gap calculation not automated', detail: 'No WFA story or SAC report exists for Article 9 pay gap measures by worker category and pay component', cat: 'gap_reporting', fix: 'WFA > New Story > Article 9 Pay Gap KPIs > Schedule review', action: 'required', checkId: 'gr_wfa' },
+  { id: 'f1', severity: 'critical', title: 'No pay range on job requisitions', detail: 'EU job postings missing salary bands - potential Article 5 readiness gap after national transposition', cat: 'hiring_disclosure', fix: 'RCM > Requisition Template > Add Custom MDF Field for Pay Range', action: 'required', checkId: 'hd_req' },
+  { id: 'f2', severity: 'critical', title: 'Gender pay gap calculation not automated', detail: 'No WFA story or SAC report exists for Article 9-style pay gap measures by worker category and pay component', cat: 'gap_reporting', fix: 'WFA > New Story > Article 9 Pay Gap KPIs > Schedule review', action: 'required', checkId: 'gr_wfa' },
   { id: 'f3', severity: 'high', title: 'Article 7 pay information response missing', detail: 'Workers must be able to request individual pay level and average pay levels by sex for same/equal-value categories', cat: 'pay_disclosure', fix: 'EC > MDF > Create Pay Information Request object + governed response pack', action: 'required', checkId: 'pd_avg_levels' },
-  { id: 'f4', severity: 'high', title: 'No joint pay assessment trigger', detail: 'A >=5% unexplained average pay level gap in any category requires joint assessment if not remediated within six months', cat: 'joint_assessment', fix: 'EC/WFA > Gap Alert > Justification Review > Workflow', action: 'required', checkId: 'ja_trigger' },
-  { id: 'f5', severity: 'high', title: 'Pay grade externalCode not mapped to national bands', detail: 'DE and FR pay grades lack reference to official national classification systems', cat: 'pay_grade', fix: 'EC > Manage Data > Pay Grade > Add national_classification field', action: 'advisory', checkId: 'pg_mapped' },
+  { id: 'f4', severity: 'high', title: 'No joint pay assessment trigger', detail: 'A >=5% unexplained average pay level gap may require joint assessment if not justified and not remediated within six months of pay reporting', cat: 'joint_assessment', fix: 'EC/WFA > Gap Alert > Justification Review > Workflow', action: 'required', checkId: 'ja_trigger' },
+  { id: 'f5', severity: 'high', title: 'Pay grade externalCode not mapped to equal-value framework', detail: 'Pay grades need a validated mapping to locally agreed job classification or equal-value criteria', cat: 'pay_grade', fix: 'EC > Manage Data > Pay Grade > Add equal_value_framework field', action: 'advisory', checkId: 'pg_mapped' },
   { id: 'f6', severity: 'medium', title: 'Career Site does not display salary', detail: 'Career Site Builder template not configured to surface pay range from requisition', cat: 'hiring_disclosure', fix: 'RCM > Career Site Builder > Edit Job Details Page > Add Pay Range component', action: 'required', checkId: 'hd_career' },
   { id: 'f7', severity: 'medium', title: 'Worker representative notification missing', detail: 'No workflow to involve works council / union when a qualifying joint assessment is required', cat: 'joint_assessment', fix: 'EC > Workflow > Create Joint Assessment Notification workflow', action: 'advisory', checkId: 'ja_workflow' },
   { id: 'f8', severity: 'medium', title: 'Gender field data quality below 95%', detail: 'Pay gap calculations unreliable if gender data incomplete', cat: 'comp_data', fix: 'EC > Manage Data > PerPerson > Run data quality report on gender field', action: 'required', checkId: 'cd_gender' },
@@ -726,6 +732,7 @@ let state = {
   username: '',
   corsProxy: '',
   hasSavedPassword: false,
+  liveMode: false,
   lastRefresh: '',
   theme: 'dark',
   answers: {},
@@ -750,6 +757,7 @@ function loadState() {
       state.corsProxy = parsed.corsProxy || '';
       state.connected = parsed.connected || false;
       state.hasSavedPassword = parsed.hasSavedPassword || false;
+      state.liveMode = parsed.liveMode || false;
       state.lastRefresh = parsed.lastRefresh || '';
       state.theme = parsed.theme || 'dark';
       state.checkResults = parsed.checkResults || {};
@@ -771,6 +779,7 @@ function saveState() {
       corsProxy: state.corsProxy,
       connected: state.connected,
       hasSavedPassword: state.hasSavedPassword,
+      liveMode: state.liveMode,
       lastRefresh: state.lastRefresh,
       theme: state.theme,
       checkResults: state.checkResults,
@@ -1262,7 +1271,7 @@ function renderEvidencePack() {
         <div>${r.medianGapPct}%</div>
         <div>${r.jointAssessmentFlag ? 'Yes' : 'No'}</div>
       </div>`).join('')
-    : `<div class="article-row" style="grid-template-columns:1fr">Insufficient joined pay, gender, and worker-category data for Article 9 calculations.</div>`;
+    : `<div class="article-row" style="grid-template-columns:1fr">Insufficient joined pay, gender, and worker-category data for prototype Article 9-style calculations.</div>`;
   const limitations = (article9.limitations || []).map(x => `<li>${escapeHtml(x)}</li>`).join('');
   const diag = article9.joinDiagnostics || {};
   const diagHtml = Object.keys(diag).length
@@ -1284,7 +1293,7 @@ function renderEvidencePack() {
     <div class="evidence-grid">
       <div class="evidence-card"><div class="k">Resolved APIs</div><div class="v">${entityEntries.length}</div></div>
       <div class="evidence-card"><div class="k">Rows Pulled</div><div class="v">${rowsPulled}</div></div>
-      <div class="evidence-card"><div class="k">Article 9 Status</div><div class="v">${escapeHtml(article9.status || 'n/a')}</div></div>
+      <div class="evidence-card"><div class="k">Prototype Article 9 Status</div><div class="v">${escapeHtml(article9.status || 'n/a')}</div></div>
     </div>
     <div class="data-note">
       <span><strong>Cohort:</strong> ${cohort.userCount || 0} users, ${cohort.personCount || 0} persons${pack.countryFilter ? `, country filter ${escapeHtml(pack.countryFilter)}` : ''}</span>
@@ -1292,7 +1301,7 @@ function renderEvidencePack() {
     </div>
     <div class="article-table">
       <div class="article-head">
-        <div>Country</div><div>Worker Category (Inferred)</div><div>Employees</div><div>Female</div><div>Male</div><div>Mean Gap</div><div>Median Gap</div><div>JPA</div>
+        <div>Country</div><div>Worker Category (Inferred)</div><div>Employees</div><div>Female</div><div>Male</div><div>Mean Gap</div><div>Median Gap</div><div>Potential JPA</div>
       </div>
       ${articleRows}
     </div>
@@ -1512,11 +1521,21 @@ async function loadSavedCredentials() {
     const resp = await fetch('/api/credentials');
     const data = await resp.json();
     if (resp.ok && data.ok) {
-      state.baseUrl = data.baseUrl || state.baseUrl;
-      state.companyId = data.companyId || state.companyId;
-      state.username = data.username || state.username;
-      state.hasSavedPassword = !!data.hasPassword;
-      if (state.hasSavedPassword && state.baseUrl) state.connected = true;
+      state.liveMode = !!data.liveMode;
+      if (!state.liveMode) {
+        state.baseUrl = '';
+        state.companyId = '';
+        state.username = '';
+        state.hasSavedPassword = false;
+        state.connected = false;
+        state.countryOptions = [];
+      } else {
+        state.baseUrl = data.baseUrl || state.baseUrl;
+        state.companyId = data.companyId || state.companyId;
+        state.username = data.username || state.username;
+        state.hasSavedPassword = !!data.hasPassword;
+        if (state.hasSavedPassword && state.baseUrl) state.connected = true;
+      }
       updateStatus();
       updateRefreshLabel();
       loadCountryOptions();
@@ -1567,6 +1586,8 @@ function updateStatus() {
   const el = document.getElementById('instanceStatus');
   if (state.connected && state.baseUrl) {
     el.innerHTML = `<span class="status-dot online"></span>${state.companyId}`;
+  } else if (!state.liveMode) {
+    el.innerHTML = `<span class="status-dot offline"></span>Demo-Safe Mode`;
   } else {
     el.innerHTML = `<span class="status-dot offline"></span>Demo Mode`;
   }

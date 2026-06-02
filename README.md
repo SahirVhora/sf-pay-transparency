@@ -45,7 +45,7 @@ You can open the UI directly in demo mode:
 open index.html
 ```
 
-Or start the local backend for live OData checks:
+Or start the local backend in demo-safe mode:
 
 ```bash
 python3 backend_server.py
@@ -69,11 +69,23 @@ Then open:
 http://localhost:8090
 ```
 
+To enable live SuccessFactors OData checks on your own machine, start the backend with explicit live mode:
+
+```bash
+SFPT_LIVE_MODE=1 python3 backend_server.py
+```
+
+or:
+
+```bash
+SFPT_LIVE_MODE=1 PORT=8090 python3 backend_server.py
+```
+
 ## How It Works
 
 In demo mode, the app works as a guided readiness checklist and workshop tool.
 
-With the local backend running, it can:
+With the local backend running in `SFPT_LIVE_MODE=1`, it can:
 
 1. Fetch SuccessFactors OData `$metadata`.
 2. Resolve relevant entities such as `EmpJob`, compensation, employment/person/gender sources, `Position`, job code, pay grade, and pay range where available.
@@ -91,7 +103,7 @@ Connection settings are saved locally by the backend in:
 .pay_transparency_credentials.json
 ```
 
-The file is created with owner-only permissions (`600`) and is ignored by Git. The browser receives non-secret connection fields and a `hasPassword` flag; the password is not stored in browser `localStorage` or exported reports.
+The file is created with owner-only permissions (`600`) and is ignored by Git. In demo-safe mode, the backend does not expose saved tenant details or call SuccessFactors. In explicit live mode, the browser receives non-secret connection fields and a `hasPassword` flag; the password is not stored in browser `localStorage` or exported reports.
 
 This is suitable for local prototype use on your own machine. For shared hosting, replace this with OS keyring, a vault, OAuth, or another approved enterprise credential pattern.
 
@@ -108,6 +120,8 @@ See [SECURITY.md](SECURITY.md) for the publishing checklist.
 - This is not legal advice.
 - This is not a certified pay equity calculation.
 - Worker category mapping is inferred from available job, position, pay grade, pay range, or related fields and must be validated.
+- Article 9-style metrics are prototype calculations only; they do not certify gross annual pay, gross hourly pay, national report formats, full-population coverage, privacy suppression, or a legally approved equal-value methodology.
+- Employer reporting thresholds are staged by worker count under the EU baseline and may be stricter under national transposition.
 - Country-specific implementation details must be reviewed with qualified HR/legal stakeholders.
 - Small-population suppression, privacy rules, and formal equal-value methodology are not production-ready.
 - The live checks are readiness probes and capped evidence pulls, not a full tenant audit.
@@ -169,4 +183,3 @@ Start with SF Compass for the full hub: https://sahirvhora.github.io/sf-compass/
 | SF Value Navigator | Value realisation and sponsor-facing consulting framework |
 | SF Position Integrity Checker | Position hierarchy, incumbency, and EC data-quality validation |
 | SAPSF ObjectSync | Controlled foundation-object synchronisation between SF environments |
-

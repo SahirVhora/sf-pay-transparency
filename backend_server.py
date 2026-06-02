@@ -25,6 +25,7 @@ PORT = 8080
 ROOT = Path(__file__).resolve().parent
 CREDENTIALS_FILE = ROOT / ".pay_transparency_credentials.json"
 ALLOWED_HOST_SUFFIXES = (".successfactors.eu", ".sapsf.eu", ".successfactors.com", ".sapsf.com")
+LIVE_MODE = os.getenv("SFPT_LIVE_MODE", "").lower() in ("1", "true", "yes", "on")
 EDM_NS = "{http://schemas.microsoft.com/ado/2008/09/edm}"
 ALL_CHECK_IDS = (
     "pg_exists", "pg_values", "pg_mapped", "pg_dated",
@@ -71,6 +72,24 @@ SENSITIVE_FIELD_MARKERS = (
 
 
 class PayTransparencyHandler(BaseHTTPRequestHandler):
+    def do_HEAD(self):
+        parsed = urlparse(self.path)
+        if parsed.path in ("", "/"):
+            path = ROOT / "index.html"
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(path.stat().st_size))
+            self.end_headers()
+            return
+        if parsed.path == "/health":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", "12")
+            self.end_headers()
+            return
+        self.send_response(404)
+        self.end_headers()
+
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path in ("", "/"):
@@ -108,6 +127,8 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
             self._json(500, {"ok": False, "message": str(exc)})
 
     def _api_test_connection(self, payload: dict):
+        if not self._require_live_mode():
+            return
         credentials = _merge_saved_credentials(payload)
         base_url = _clean_base_url(credentials.get("baseUrl", ""))
         username = (credentials.get("username") or "").strip()
@@ -131,9 +152,20 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
         self._json(status, {"ok": False, "message": f"HTTP {status} from SuccessFactors", "detail": snippet})
 
     def _api_get_credentials(self):
+        if not LIVE_MODE:
+            self._json(200, {
+                "ok": True,
+                "liveMode": False,
+                "baseUrl": "",
+                "companyId": "",
+                "username": "",
+                "hasPassword": False,
+            })
+            return
         saved = _load_credentials()
         self._json(200, {
             "ok": True,
+            "liveMode": True,
             "baseUrl": saved.get("baseUrl", ""),
             "companyId": saved.get("companyId", ""),
             "username": saved.get("username", ""),
@@ -141,6 +173,9 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
         })
 
     def _api_countries(self):
+        if not LIVE_MODE:
+            self._json(200, {"ok": True, "liveMode": False, "countries": []})
+            return
         credentials = _merge_saved_credentials({})
         base_url = _clean_base_url(credentials.get("baseUrl", ""))
         username = (credentials.get("username") or "").strip()
@@ -155,6 +190,8 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
         self._json(200, {"ok": True, "countries": countries})
 
     def _api_save_credentials(self, payload: dict):
+        if not self._require_live_mode():
+            return
         current = _load_credentials()
         password = payload.get("password") or current.get("password", "")
         credentials = {
@@ -171,6 +208,8 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
         self._json(200, {"ok": True, "message": "Credentials saved locally"})
 
     def _api_live_checks(self, payload: dict):
+        if not self._require_live_mode():
+            return
         credentials = _merge_saved_credentials(payload)
         base_url = _clean_base_url(credentials.get("baseUrl", ""))
         username = (credentials.get("username") or "").strip()
@@ -268,6 +307,8 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
         })
 
     def _api_evidence_pack(self, payload: dict):
+        if not self._require_live_mode():
+            return
         credentials = _merge_saved_credentials(payload)
         base_url = _clean_base_url(credentials.get("baseUrl", ""))
         username = (credentials.get("username") or "").strip()
@@ -300,6 +341,16 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
                 "fullTenantAudit": False,
             },
         })
+
+    def _require_live_mode(self) -> bool:
+        if LIVE_MODE:
+            return True
+        self._json(403, {
+            "ok": False,
+            "liveMode": False,
+            "message": "Live tenant mode is disabled. Restart locally with SFPT_LIVE_MODE=1 to save credentials or call SuccessFactors OData.",
+        })
+        return False
 
     def _read_json(self) -> dict:
         length = int(self.headers.get("Content-Length", "0"))
@@ -1280,7 +1331,7 @@ def _calculate_article9(evidence: dict, resolved: dict[str, str | None]) -> dict
     all_amounts = sorted(usable, key=lambda row: row["amount"])
     quartiles = _quartile_distribution(all_amounts)
     return {
-        "status": "calculated" if category_results else "insufficient_data",
+        "status": "prototype_calculated" if category_results else "insufficient_data",
         "recordsAnalysed": len(pay_records),
         "recordsWithGender": len(usable),
         "genderCoveragePct": round((len(usable) / len(pay_records)) * 100) if pay_records else 0,
@@ -1315,11 +1366,13 @@ def _article9_limitations(evidence: dict, pay_records: list[dict], usable: list[
     if not pay_records:
         notes.append("No compensation records with numeric pay values were available in the evidence pull.")
     if pay_records and not usable:
-        notes.append("Compensation records were found, but gender could not be joined for Article 9 calculations.")
+        notes.append("Compensation records were found, but gender could not be joined for prototype Article 9-style calculations.")
     if usable and not category_results:
         notes.append("Gendered pay records were found, but each worker category needs both male and female records to calculate gaps.")
     notes.append("Prototype uses the capped evidence pull, not a full tenant audit. Increase the limit or add full audit mode for production evidence.")
     notes.append("Worker category mapping is inferred from job/position/pay grade fields and should be validated by HR/legal.")
+    notes.append("Prototype calculations use available pay component rows and do not certify gross annual pay, gross hourly pay, ordinary basic pay, complementary or variable components, or national reporting formats.")
+    notes.append("Privacy suppression and small-population controls are not enforced before displaying category averages.")
     return notes
 
 
@@ -1419,4 +1472,8 @@ if __name__ == "__main__":
     port = int(os.getenv("PORT", str(PORT)))
     server = ThreadingHTTPServer((HOST, port), PayTransparencyHandler)
     print(f"SF Pay Transparency app running at http://localhost:{port}")
+    if LIVE_MODE:
+        print("Live tenant mode enabled: credentials and OData endpoints are available locally.")
+    else:
+        print("Demo-safe mode: set SFPT_LIVE_MODE=1 to enable local SuccessFactors OData checks.")
     server.serve_forever()
