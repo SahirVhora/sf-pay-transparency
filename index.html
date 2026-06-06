@@ -206,9 +206,11 @@ body.light{background:#f6f7f9;color:#111827}
 .test-result{margin-top:6px;font-size:11px}
 .test-result.ok{color:#22c55e}
 .test-result.err{color:#ef4444}
-.modal-footer{padding:12px 20px;border-top:1px solid #1e1e22;display:flex;justify-content:flex-end;gap:8px}
+.modal-footer{padding:12px 20px;border-top:1px solid #1e1e22;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.modal-footer .footer-actions{display:flex;gap:8px;flex-wrap:wrap}
 .btn-cancel{padding:8px 16px;background:transparent;border:1px solid #2a2a2e;border-radius:6px;color:#a1a1aa;font-size:12px;cursor:pointer}
 .btn-save{padding:8px 20px;background:#c8a84e;border:1px solid #c8a84e;border-radius:6px;color:#000;font-weight:600;font-size:12px;cursor:pointer}
+.btn-danger{padding:8px 16px;background:#ef444422;border:1px solid #ef444466;border-radius:6px;color:#ef4444;font-size:12px;cursor:pointer}
 
 /* Status indicator */
 .status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
@@ -443,6 +445,8 @@ body.light .progress-bar,body.light .q-progress .bar{background:#e5e7eb}
       <div class="controls">
         <label for="evidenceLimit">Rows per API</label>
         <input id="evidenceLimit" type="number" min="100" max="5000" step="100" value="1000" />
+        <label for="suppressionMinGroup">Suppress under</label>
+        <input id="suppressionMinGroup" type="number" min="2" max="50" step="1" value="10" title="Minimum total, female, and male cohort size before Article 9 pay metrics are shown." />
         <label for="countryFilter">Country</label>
         <select id="countryFilter" style="width:150px">
           <option value="">All countries</option>
@@ -469,18 +473,18 @@ body.light .progress-bar,body.light .q-progress .bar{background:#e5e7eb}
 </div>
 
 <!-- Settings Modal -->
-<div class="modal-overlay" id="settingsModal">
-  <div class="modal">
+<div class="modal-overlay" id="settingsModal" role="presentation">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
     <div class="modal-header">
-      <h2>&#9881; Connection Settings</h2>
-      <button class="modal-close" onclick="closeSettings()">&times;</button>
+      <h2 id="settingsTitle">&#9881; Connection Settings</h2>
+      <button class="modal-close" onclick="closeSettings()" aria-label="Close settings">&times;</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
         <label>Authentication</label>
         <select id="authType" onchange="toggleAuthFields()">
           <option value="basic">Basic Auth (Username/Password)</option>
-          <option value="oauth2">OAuth2 Client Credentials</option>
+          <option value="oauth2" disabled>OAuth2 Client Credentials (planned)</option>
         </select>
       </div>
       <div id="basicFields">
@@ -506,7 +510,7 @@ body.light .progress-bar,body.light .q-progress .bar{background:#e5e7eb}
         </div>
       </div>
       <div class="form-group">
-        <label>Legacy CORS Proxy (optional)</label>
+        <label>Legacy CORS Proxy (advanced, optional)</label>
         <input id="corsProxy" placeholder="http://localhost:8081/" />
       </div>
       <div class="data-note" style="margin:12px 0 0">
@@ -518,8 +522,11 @@ body.light .progress-bar,body.light .q-progress .bar{background:#e5e7eb}
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
-      <button class="btn-save" onclick="saveConnection()">&#10004; Save &amp; Run Checks</button>
+      <button class="btn-danger" onclick="clearLocalData()">Clear Local Data</button>
+      <div class="footer-actions">
+        <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
+        <button class="btn-save" onclick="saveConnection()">&#10004; Save &amp; Run Checks</button>
+      </div>
     </div>
   </div>
 </div>
@@ -742,6 +749,7 @@ let state = {
   dataPullMode: {},
   evidencePack: null,
   countryOptions: [],
+  suppressionMinGroup: 10,
   currentFilter: 'all'
 };
 
@@ -766,6 +774,7 @@ function loadState() {
       state.dataPullMode = parsed.dataPullMode || {};
       state.evidencePack = parsed.evidencePack || null;
       state.countryOptions = parsed.countryOptions || [];
+      state.suppressionMinGroup = parsed.suppressionMinGroup || 10;
     }
   } catch(e) {}
 }
@@ -787,7 +796,8 @@ function saveState() {
       resolvedEntities: state.resolvedEntities,
       dataPullMode: state.dataPullMode,
       evidencePack: state.evidencePack,
-      countryOptions: state.countryOptions
+      countryOptions: state.countryOptions,
+      suppressionMinGroup: state.suppressionMinGroup
     }));
   } catch(e) {}
 }
@@ -810,6 +820,7 @@ function init() {
   updateTabCounts();
   bindTabs();
   bindFilters();
+  bindGlobalKeys();
   recalcScores();
   updateRefreshLabel();
 }
@@ -839,8 +850,16 @@ function updateRefreshLabel() {
 function renderDaysLeft() {
   const deadline = new Date('2026-06-07');
   const now = new Date();
-  const diff = Math.max(0, Math.ceil((deadline - now) / (1000 * 60 * 60 * 24)));
-  document.getElementById('daysLeft').textContent = diff;
+  const diff = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+  const valueEl = document.getElementById('daysLeft');
+  const labelEl = valueEl?.nextElementSibling;
+  if (diff > 0) {
+    valueEl.textContent = diff;
+    if (labelEl) labelEl.textContent = 'Days Left';
+  } else {
+    valueEl.textContent = 'Live';
+    if (labelEl) labelEl.textContent = 'Post Deadline';
+  }
 }
 
 // ==================== RENDER ====================
@@ -1207,7 +1226,9 @@ async function generateEvidencePack() {
   showToast('Generating evidence pack. This can take a minute...', 'success');
   try {
     const limit = Number(document.getElementById('evidenceLimit').value || 1000);
+    const suppressionMinGroup = Number(document.getElementById('suppressionMinGroup').value || state.suppressionMinGroup || 10);
     const country = document.getElementById('countryFilter').value;
+    state.suppressionMinGroup = suppressionMinGroup;
     const resp = await fetch('/api/evidence-pack', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1216,6 +1237,7 @@ async function generateEvidencePack() {
         companyId: state.companyId,
         username: state.username,
         limit,
+        suppressionMinGroup,
         country
       })
     });
@@ -1241,9 +1263,11 @@ async function generateEvidencePack() {
 function renderEvidencePack() {
   const el = document.getElementById('evidenceBody');
   if (!el) return;
+  const suppressionInput = document.getElementById('suppressionMinGroup');
+  if (suppressionInput) suppressionInput.value = state.suppressionMinGroup || 10;
   const pack = state.evidencePack;
   if (!pack) {
-    el.innerHTML = `<div class="data-note"><span><strong>No evidence pack yet.</strong> Generate one after saving a connection.</span><span>Recommended limit: 1000 rows per API</span></div>`;
+    el.innerHTML = `<div class="data-note"><span><strong>No evidence pack yet.</strong> Generate one after saving a connection.</span><span>Recommended limit: 1000 rows per API, suppress under ${state.suppressionMinGroup || 10}</span></div>`;
     return;
   }
   const entities = pack.evidence?.entities || {};
@@ -1252,6 +1276,7 @@ function renderEvidencePack() {
   const rowsPulled = entityEntries.reduce((sum, [, info]) => sum + (info.rowsPulled || 0), 0);
   const article9 = pack.article9 || {};
   const categories = article9.categoryResults || [];
+  const suppressionMinGroup = pack.suppressionMinGroup || article9.suppressionMinGroup || state.suppressionMinGroup || 10;
   const entityHtml = entityEntries.map(([purpose, info]) => `
     <details class="evidence-entity">
       <summary>${purpose} - ${info.entity || 'Not resolved'} (${info.rowsPulled || 0} rows)</summary>
@@ -1268,9 +1293,9 @@ function renderEvidencePack() {
         <div>${r.employees}</div>
         <div>${r.femaleCount}</div>
         <div>${r.maleCount}</div>
-        <div>${r.meanGapPct}%</div>
-        <div>${r.medianGapPct}%</div>
-        <div>${r.jointAssessmentFlag ? 'Yes' : 'No'}</div>
+        <div>${r.suppressed ? 'Suppressed' : `${r.meanGapPct}%`}</div>
+        <div>${r.suppressed ? 'Suppressed' : `${r.medianGapPct}%`}</div>
+        <div>${r.suppressed ? 'Suppressed' : (r.jointAssessmentFlag ? 'Yes' : 'No')}</div>
       </div>`).join('')
     : `<div class="article-row" style="grid-template-columns:1fr">Insufficient joined pay, gender, and worker-category data for prototype Article 9-style calculations.</div>`;
   const limitations = (article9.limitations || []).map(x => `<li>${escapeHtml(x)}</li>`).join('');
@@ -1308,7 +1333,7 @@ function renderEvidencePack() {
     </div>
     <div class="data-note">
       <span><strong>Worker category:</strong> inferred from available EmpJob/Position fields such as jobCode, payGrade, payRange, or position. Treat it as a working group, not a legally approved equal-value category yet.</span>
-      <span>Validate with HR/legal before reporting.</span>
+      <span>Small groups suppressed under ${suppressionMinGroup} per cohort.</span>
     </div>
     <div class="config-path">
       <h4>Article 9 Limitations</h4>
@@ -1432,6 +1457,12 @@ function bindTabs() {
   });
 }
 
+function bindGlobalKeys() {
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeSettings();
+  });
+}
+
 function updateTabCounts() {
   const required = FINDINGS.filter(f => f.action === 'required').length;
   document.getElementById('findingsCount').textContent = FINDINGS.length;
@@ -1455,7 +1486,48 @@ function closeSettings() {
 }
 
 function toggleAuthFields() {
-  // Future: show/hide OAuth fields
+  const result = document.getElementById('testResult');
+  const authType = document.getElementById('authType')?.value;
+  if (authType !== 'basic' && result) {
+    result.textContent = 'OAuth is planned but not enabled in this local prototype yet.';
+    result.className = 'test-result err';
+  }
+}
+
+async function clearLocalData() {
+  if (!confirm('Clear browser state and local backend credentials for this prototype?')) return;
+  try {
+    await fetch('/api/clear-local-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+  } catch (e) {
+    console.warn('Backend credential clear unavailable:', e);
+  }
+  localStorage.removeItem('sf-paytransparency');
+  state.connected = false;
+  state.baseUrl = '';
+  state.companyId = '';
+  state.username = '';
+  state.corsProxy = '';
+  state.hasSavedPassword = false;
+  state.lastRefresh = '';
+  state.answers = {};
+  state.checkResults = {};
+  state.resolvedEntities = {};
+  state.dataPullMode = {};
+  state.evidencePack = null;
+  state.countryOptions = [];
+  state.suppressionMinGroup = 10;
+  closeSettings();
+  renderCountryOptions();
+  renderQuestionnaire();
+  renderEvidencePack();
+  recalcScores();
+  updateStatus();
+  updateRefreshLabel();
+  showToast('Local data cleared', 'success');
 }
 
 async function testConnection() {

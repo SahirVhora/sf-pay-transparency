@@ -93,7 +93,7 @@ With the local backend running in `SFPT_LIVE_MODE=1`, it can:
 4. Pull capped evidence samples for the evidence pack.
 5. Estimate Article 9 metrics where joins are available.
 
-Raw employee/pay rows are used only in backend memory for calculations. The evidence JSON returns field coverage, selected fields, row counts, masked sample rows, resolved entity names, calculations, and limitations.
+Raw employee/pay rows are used only in backend memory for calculations. The evidence JSON returns field coverage, selected fields, row counts, masked sample rows, resolved entity names, calculations, and limitations. Article 9-style category metrics are suppressed for small cohorts before display and export.
 
 ## Credentials And Data Safety
 
@@ -104,6 +104,8 @@ Connection settings are saved locally by the backend in:
 ```
 
 The file is created with owner-only permissions (`600`) and is ignored by Git. In demo-safe mode, the backend does not expose saved tenant details or call SuccessFactors. In explicit live mode, the browser receives non-secret connection fields and a `hasPassword` flag; the password is not stored in browser `localStorage` or exported reports.
+
+Use **Settings > Clear Local Data** to clear browser state and ask the local backend to delete saved credentials.
 
 This is suitable for local prototype use on your own machine. For shared hosting, replace this with OS keyring, a vault, OAuth, or another approved enterprise credential pattern.
 
@@ -157,11 +159,17 @@ Basic Python syntax check:
 python3 -m py_compile backend_server.py proxy_server.py
 ```
 
+Demo-mode smoke test:
+
+```bash
+python3 scripts/smoke_test.py
+```
+
 ## Roadmap Ideas
 
 1. Add a real ingestion layer for EC, Compensation, Recruiting, and People Analytics extracts.
 2. Add explicit worker-category/equal-value mapping with evidence fields for skills, effort, responsibility, and working conditions.
-3. Add privacy suppression and small-population controls before exposing peer-category averages.
+3. Extend privacy suppression controls with country/legal policy presets.
 4. Generate an auditable evidence pack with source tables, calculation timestamp, assumptions, data-quality exceptions, and remediation owner.
 5. Add accessibility and screenshot regression checks.
 

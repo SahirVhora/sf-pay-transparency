@@ -116,6 +116,9 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
             if parsed.path == "/api/save-credentials":
                 self._api_save_credentials(payload)
                 return
+            if parsed.path == "/api/clear-local-data":
+                self._api_clear_local_data()
+                return
             if parsed.path == "/api/live-checks":
                 self._api_live_checks(payload)
                 return
@@ -206,6 +209,10 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
             return
         _save_credentials(credentials)
         self._json(200, {"ok": True, "message": "Credentials saved locally"})
+
+    def _api_clear_local_data(self):
+        _delete_credentials()
+        self._json(200, {"ok": True, "message": "Local backend credentials cleared"})
 
     def _api_live_checks(self, payload: dict):
         if not self._require_live_mode():
@@ -326,11 +333,18 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
         resolved = _resolve_entities(entities, properties)
         evidence = _build_evidence_pack(base_url, username, password, properties, resolved, limit, country_filter)
         raw_evidence = evidence.pop("_raw", {})
-        article9 = _calculate_article9({"_raw": raw_evidence}, resolved)
+        suppression_min_group = _bounded_int(
+            payload.get("suppressionMinGroup"),
+            default=10,
+            minimum=2,
+            maximum=50,
+        )
+        article9 = _calculate_article9({"_raw": raw_evidence}, resolved, suppression_min_group)
         self._json(200, {
             "ok": True,
             "generatedAt": _now_iso(),
             "limitPerEntity": limit,
+            "suppressionMinGroup": suppression_min_group,
             "countryFilter": country_filter,
             "resolvedEntities": resolved,
             "evidence": evidence,
@@ -405,6 +419,14 @@ def _save_credentials(credentials: dict):
     os.chmod(tmp_path, 0o600)
     tmp_path.replace(CREDENTIALS_FILE)
     os.chmod(CREDENTIALS_FILE, 0o600)
+
+
+def _delete_credentials():
+    for path in (CREDENTIALS_FILE, CREDENTIALS_FILE.with_suffix(".tmp")):
+        try:
+            path.unlink()
+        except FileNotFoundError:
+            pass
 
 
 def _merge_saved_credentials(payload: dict) -> dict:
@@ -1215,7 +1237,7 @@ def _mask_value(value):
     return f"{text[:2]}***{text[-2:]}"
 
 
-def _calculate_article9(evidence: dict, resolved: dict[str, str | None]) -> dict:
+def _calculate_article9(evidence: dict, resolved: dict[str, str | None], suppression_min_group: int = 10) -> dict:
     raw = evidence.get("_raw", {})
     comp_rows = raw.get("comp", [])
     user_rows = raw.get("user", [])
@@ -1301,10 +1323,33 @@ def _calculate_article9(evidence: dict, resolved: dict[str, str | None]) -> dict
         groups.setdefault(key, []).append(row)
 
     category_results = []
+    suppressed_category_count = 0
     for (country, category, currency), rows in sorted(groups.items()):
         female = [row["amount"] for row in rows if row["gender"] == "female"]
         male = [row["amount"] for row in rows if row["gender"] == "male"]
         if not female or not male:
+            continue
+        employees = len({row["userId"] for row in rows})
+        if employees < suppression_min_group or len(female) < suppression_min_group or len(male) < suppression_min_group:
+            suppressed_category_count += 1
+            category_results.append({
+                "country": country,
+                "workerCategory": category,
+                "currency": currency,
+                "employees": employees,
+                "femaleCount": len(female),
+                "maleCount": len(male),
+                "suppressed": True,
+                "suppressionReason": f"Minimum group size is {suppression_min_group} for total, female, and male cohorts.",
+                "meanFemalePay": None,
+                "meanMalePay": None,
+                "meanGapPct": None,
+                "medianFemalePay": None,
+                "medianMalePay": None,
+                "medianGapPct": None,
+                "variableComponentRecords": sum(1 for row in rows if row["isVariable"]),
+                "jointAssessmentFlag": None,
+            })
             continue
         male_mean = _mean(male)
         female_mean = _mean(female)
@@ -1315,9 +1360,10 @@ def _calculate_article9(evidence: dict, resolved: dict[str, str | None]) -> dict
             "country": country,
             "workerCategory": category,
             "currency": currency,
-            "employees": len({row["userId"] for row in rows}),
+            "employees": employees,
             "femaleCount": len(female),
             "maleCount": len(male),
+            "suppressed": False,
             "meanFemalePay": round(female_mean, 2),
             "meanMalePay": round(male_mean, 2),
             "meanGapPct": _gap_pct(male_mean, female_mean),
@@ -1347,6 +1393,8 @@ def _calculate_article9(evidence: dict, resolved: dict[str, str | None]) -> dict
             "empJobRows": len(emp_job_rows),
             "positionRows": len(position_rows),
         },
+        "suppressionMinGroup": suppression_min_group,
+        "suppressedCategoryCount": suppressed_category_count,
         "categoryResults": category_results,
         "quartileDistribution": quartiles,
         "limitations": _article9_limitations(evidence, pay_records, usable, category_results),
@@ -1372,7 +1420,7 @@ def _article9_limitations(evidence: dict, pay_records: list[dict], usable: list[
     notes.append("Prototype uses the capped evidence pull, not a full tenant audit. Increase the limit or add full audit mode for production evidence.")
     notes.append("Worker category mapping is inferred from job/position/pay grade fields and should be validated by HR/legal.")
     notes.append("Prototype calculations use available pay component rows and do not certify gross annual pay, gross hourly pay, ordinary basic pay, complementary or variable components, or national reporting formats.")
-    notes.append("Privacy suppression and small-population controls are not enforced before displaying category averages.")
+    notes.append("Small-population category results are suppressed before displaying or exporting Article 9 pay metrics.")
     return notes
 
 
