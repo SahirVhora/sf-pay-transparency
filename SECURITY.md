@@ -1,19 +1,35 @@
-# Security And Publishing Notes
+# Security Policy
 
-This project is a local SuccessFactors readiness prototype. Treat it as a demo and analysis aid, not as production security architecture.
+## Supported Versions
 
-## Before Sharing
+This project is actively maintained. Security updates are applied to the latest release.
 
-- Remove local credentials: `rm -f .pay_transparency_credentials.*`
-- Confirm `.gitignore` still excludes `.pay_transparency_credentials.*`, `.env`, and generated Python cache files.
-- Do not publish screenshots containing tenant URLs, company IDs, usernames, employee identifiers, pay values, sample rows, or country-specific client data.
-- Use demo data or redacted screenshots for LinkedIn, talks, and public repos.
-- Keep the backend in demo-safe mode for public demos. Use `SFPT_LIVE_MODE=1` only for private local tenant checks.
-- Keep the backend bound to `127.0.0.1` for local use.
-- Use the app's **Clear Local Data** action after private checks to clear browser state and delete saved local backend credentials.
-- Replace password storage with OS keyring, a vault, OAuth, or another approved enterprise credential pattern before shared hosting.
-- Validate legal interpretation and country-specific implementation details with qualified HR/legal stakeholders.
+## Reporting a Vulnerability
 
-## Data Handling
+If you discover a security vulnerability, please report it responsibly.
 
-The evidence pack masks sample values and does not return raw employee/pay rows used for calculations. Article 9-style category metrics are suppressed for small cohorts before display and export. This does not make the tool automatically safe for real tenant demonstrations. Metadata, resolved entity names, field names, row counts, and aggregate calculations can still reveal sensitive implementation details.
+**Do NOT open a public issue.**
+
+Instead, email [sahir.vhora@gmail.com](mailto:sahir.vhora@gmail.com) with:
+- Description of the vulnerability
+- Steps to reproduce
+- Potential impact
+- Suggested fix (if any)
+
+## What to Expect
+
+- Acknowledgement within 48 hours
+- Assessment of severity and impact
+- Timeline for fix disclosure
+- Credit in release notes (unless you prefer anonymity)
+
+## Security Best Practices
+
+- Keep dependencies updated (Dependabot enabled)
+- Never commit secrets, API keys, or credentials
+- Use environment variables for configuration
+- Review PRs for security implications
+
+## Security Updates
+
+Security fixes are released as patch versions. Subscribe to releases to be notified of updates.
