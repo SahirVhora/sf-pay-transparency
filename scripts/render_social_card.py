@@ -14,7 +14,9 @@ PNG = ROOT / "assets" / "social-card.png"
 def main() -> None:
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page(viewport={"width": 1200, "height": 630}, device_scale_factor=1)
+        page = browser.new_page(
+            viewport={"width": 1200, "height": 630}, device_scale_factor=1
+        )
         page.goto(SVG.resolve().as_uri())
         page.locator("svg").screenshot(path=str(PNG), type="png")
         browser.close()

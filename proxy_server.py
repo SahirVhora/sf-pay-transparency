@@ -9,14 +9,21 @@ from urllib.error import HTTPError, URLError
 
 HOST = "127.0.0.1"
 PORT = 8081
-ALLOWED_HOST_SUFFIXES = (".successfactors.eu", ".sapsf.eu", ".successfactors.com", ".sapsf.com")
+ALLOWED_HOST_SUFFIXES = (
+    ".successfactors.eu",
+    ".sapsf.eu",
+    ".successfactors.com",
+    ".sapsf.com",
+)
 
 
 class ProxyHandler(BaseHTTPRequestHandler):
     def _send_cors(self):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept")
+        self.send_header(
+            "Access-Control-Allow-Headers", "Authorization, Content-Type, Accept"
+        )
 
     def do_OPTIONS(self):
         self.send_response(204)
@@ -62,14 +69,18 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 body = resp.read()
                 self.send_response(resp.status)
                 self._send_cors()
-                self.send_header("Content-Type", resp.headers.get("Content-Type", "application/json"))
+                self.send_header(
+                    "Content-Type", resp.headers.get("Content-Type", "application/json")
+                )
                 self.end_headers()
                 self.wfile.write(body)
         except HTTPError as exc:
             body = exc.read()
             self.send_response(exc.code)
             self._send_cors()
-            self.send_header("Content-Type", exc.headers.get("Content-Type", "text/plain"))
+            self.send_header(
+                "Content-Type", exc.headers.get("Content-Type", "text/plain")
+            )
             self.end_headers()
             self.wfile.write(body)
         except URLError as exc:

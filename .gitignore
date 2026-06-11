@@ -1,5 +1,10 @@
-.pay_transparency_credentials.*
-.env
-.env.*
-__pycache__/
-*.pyc
+1|.pay_transparency_credentials.*
+2|.env
+3|.env.*
+4|__pycache__/
+5|*.pyc
+6|
+# Python
+venv/
+node_modules/
+*.db
