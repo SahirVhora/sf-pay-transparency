@@ -191,3 +191,15 @@ Start with SF Compass for the full hub: https://sahirvhora.github.io/sf-compass/
 | SF Value Navigator | Value realisation and sponsor-facing consulting framework |
 | SF Position Integrity Checker | Position hierarchy, incumbency, and EC data-quality validation |
 | SAPSF ObjectSync | Controlled foundation-object synchronisation between SF environments |
+
+---
+
+## Part of the SF Compass Suite
+
+One of 10 free, open tools for SAP SuccessFactors consultants. Explore the full suite at [SF Compass](https://sahirvhora.github.io/sf-compass/).
+
+Related tools:
+
+- [Value Navigator](https://github.com/SahirVhora/sf-value-navigator) - Value realisation consulting framework
+- [Impact Brief](https://github.com/SahirVhora/sf-impact-brief) - Personalised release impact briefs
+- [Agent Skills](https://github.com/SahirVhora/sf-agent-skills) - AI skills for SF consultants
