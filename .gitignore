@@ -9,3 +9,6 @@ venv/
 node_modules/
 *.db
 .pay_transparency_credentials.json
+
+__pycache__/
+*.pyc
