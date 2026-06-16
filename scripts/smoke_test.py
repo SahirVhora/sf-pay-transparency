@@ -18,7 +18,9 @@ PORT = 8765
 BASE_URL = f"http://127.0.0.1:{PORT}"
 
 
-def request_json(path: str, method: str = "GET", payload: dict | None = None) -> tuple[int, dict]:
+def request_json(
+    path: str, method: str = "GET", payload: dict | None = None
+) -> tuple[int, dict]:
     body = None
     headers = {}
     if payload is not None:
