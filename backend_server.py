@@ -13,6 +13,7 @@ import math
 import json
 import os
 import xml.etree.ElementTree as ET
+from defusedxml.ElementTree import fromstring as _safe_fromstring
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -879,7 +880,7 @@ def _fetch_metadata(base_url: str, username: str, password: str) -> dict:
         raise RuntimeError(
             f"Could not fetch OData metadata: HTTP {status} - {_safe_snippet(body, content_type)}"
         )
-    root = ET.fromstring(body)
+    root = _safe_fromstring(body)
     entities = set()
     properties = {}
     for entity_type in root.iter(f"{EDM_NS}EntityType"):
