@@ -12,12 +12,11 @@ from datetime import datetime, timezone
 import math
 import json
 import os
-import xml.etree.ElementTree as ET
 from defusedxml.ElementTree import fromstring as _safe_fromstring
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
 
@@ -25,50 +24,165 @@ HOST = "127.0.0.1"
 PORT = 8080
 ROOT = Path(__file__).resolve().parent
 CREDENTIALS_FILE = ROOT / ".pay_transparency_credentials.json"
-ALLOWED_HOST_SUFFIXES = (".successfactors.eu", ".sapsf.eu", ".successfactors.com", ".sapsf.com")
+ALLOWED_HOST_SUFFIXES = (
+    ".successfactors.eu",
+    ".sapsf.eu",
+    ".successfactors.com",
+    ".sapsf.com",
+)
 LIVE_MODE = os.getenv("SFPT_LIVE_MODE", "").lower() in ("1", "true", "yes", "on")
 EDM_NS = "{http://schemas.microsoft.com/ado/2008/09/edm}"
 ALL_CHECK_IDS = (
-    "pg_exists", "pg_values", "pg_mapped", "pg_dated",
-    "ja_hierarchy", "ja_positions", "ja_families",
-    "cd_base", "cd_currency", "cd_history", "cd_gender",
-    "pd_profile", "pd_avg_levels", "pd_request",
-    "gr_gender", "gr_wfa", "gr_5pct", "gr_notify",
-    "hd_req", "hd_career", "hd_offer",
-    "ja_trigger", "ja_workflow", "ja_remediation",
-    "dg_audit", "dg_rbp", "dg_country",
+    "pg_exists",
+    "pg_values",
+    "pg_mapped",
+    "pg_dated",
+    "ja_hierarchy",
+    "ja_positions",
+    "ja_families",
+    "cd_base",
+    "cd_currency",
+    "cd_history",
+    "cd_gender",
+    "pd_profile",
+    "pd_avg_levels",
+    "pd_request",
+    "gr_gender",
+    "gr_wfa",
+    "gr_5pct",
+    "gr_notify",
+    "hd_req",
+    "hd_career",
+    "hd_offer",
+    "ja_trigger",
+    "ja_workflow",
+    "ja_remediation",
+    "dg_audit",
+    "dg_rbp",
+    "dg_country",
 )
-PAY_TEXT_MARKERS = ("pay", "salary", "range", "compensation", "min", "max", "grade", "band")
-MONEY_TEXT_MARKERS = ("salary", "pay", "compensation", "£", "$", "€", "gbp", "eur", "usd")
+PAY_TEXT_MARKERS = (
+    "pay",
+    "salary",
+    "range",
+    "compensation",
+    "min",
+    "max",
+    "grade",
+    "band",
+)
+MONEY_TEXT_MARKERS = (
+    "salary",
+    "pay",
+    "compensation",
+    "£",
+    "$",
+    "€",
+    "gbp",
+    "eur",
+    "usd",
+)
 COUNTRY_OPTIONS = (
-    ("AFG", "Afghanistan"), ("ALB", "Albania"), ("DZA", "Algeria"), ("AND", "Andorra"),
-    ("AGO", "Angola"), ("ARG", "Argentina"), ("ARM", "Armenia"), ("AUS", "Australia"),
-    ("AUT", "Austria"), ("AZE", "Azerbaijan"), ("BHR", "Bahrain"), ("BGD", "Bangladesh"),
-    ("BEL", "Belgium"), ("BRA", "Brazil"), ("BGR", "Bulgaria"), ("CAN", "Canada"),
-    ("CHL", "Chile"), ("CHN", "China"), ("COL", "Colombia"), ("HRV", "Croatia"),
-    ("CZE", "Czechia"), ("DNK", "Denmark"), ("EGY", "Egypt"), ("EST", "Estonia"),
-    ("FIN", "Finland"), ("FRA", "France"), ("DEU", "Germany"), ("GRC", "Greece"),
-    ("HKG", "Hong Kong"), ("HUN", "Hungary"), ("IND", "India"), ("IDN", "Indonesia"),
-    ("IRL", "Ireland"), ("ISR", "Israel"), ("ITA", "Italy"), ("JPN", "Japan"),
-    ("KOR", "South Korea"), ("LVA", "Latvia"), ("LTU", "Lithuania"), ("LUX", "Luxembourg"),
-    ("MYS", "Malaysia"), ("MEX", "Mexico"), ("NLD", "Netherlands"), ("NZL", "New Zealand"),
-    ("NOR", "Norway"), ("POL", "Poland"), ("PRT", "Portugal"), ("ROU", "Romania"),
-    ("SAU", "Saudi Arabia"), ("SGP", "Singapore"), ("SVK", "Slovakia"), ("SVN", "Slovenia"),
-    ("ZAF", "South Africa"), ("ESP", "Spain"), ("SWE", "Sweden"), ("CHE", "Switzerland"),
-    ("TWN", "Taiwan"), ("THA", "Thailand"), ("TUR", "Turkey"), ("ARE", "United Arab Emirates"),
-    ("GBR", "United Kingdom"), ("USA", "United States"), ("VNM", "Vietnam"),
+    ("AFG", "Afghanistan"),
+    ("ALB", "Albania"),
+    ("DZA", "Algeria"),
+    ("AND", "Andorra"),
+    ("AGO", "Angola"),
+    ("ARG", "Argentina"),
+    ("ARM", "Armenia"),
+    ("AUS", "Australia"),
+    ("AUT", "Austria"),
+    ("AZE", "Azerbaijan"),
+    ("BHR", "Bahrain"),
+    ("BGD", "Bangladesh"),
+    ("BEL", "Belgium"),
+    ("BRA", "Brazil"),
+    ("BGR", "Bulgaria"),
+    ("CAN", "Canada"),
+    ("CHL", "Chile"),
+    ("CHN", "China"),
+    ("COL", "Colombia"),
+    ("HRV", "Croatia"),
+    ("CZE", "Czechia"),
+    ("DNK", "Denmark"),
+    ("EGY", "Egypt"),
+    ("EST", "Estonia"),
+    ("FIN", "Finland"),
+    ("FRA", "France"),
+    ("DEU", "Germany"),
+    ("GRC", "Greece"),
+    ("HKG", "Hong Kong"),
+    ("HUN", "Hungary"),
+    ("IND", "India"),
+    ("IDN", "Indonesia"),
+    ("IRL", "Ireland"),
+    ("ISR", "Israel"),
+    ("ITA", "Italy"),
+    ("JPN", "Japan"),
+    ("KOR", "South Korea"),
+    ("LVA", "Latvia"),
+    ("LTU", "Lithuania"),
+    ("LUX", "Luxembourg"),
+    ("MYS", "Malaysia"),
+    ("MEX", "Mexico"),
+    ("NLD", "Netherlands"),
+    ("NZL", "New Zealand"),
+    ("NOR", "Norway"),
+    ("POL", "Poland"),
+    ("PRT", "Portugal"),
+    ("ROU", "Romania"),
+    ("SAU", "Saudi Arabia"),
+    ("SGP", "Singapore"),
+    ("SVK", "Slovakia"),
+    ("SVN", "Slovenia"),
+    ("ZAF", "South Africa"),
+    ("ESP", "Spain"),
+    ("SWE", "Sweden"),
+    ("CHE", "Switzerland"),
+    ("TWN", "Taiwan"),
+    ("THA", "Thailand"),
+    ("TUR", "Turkey"),
+    ("ARE", "United Arab Emirates"),
+    ("GBR", "United Kingdom"),
+    ("USA", "United States"),
+    ("VNM", "Vietnam"),
 )
 COUNTRY_CODE_TO_NAME = {code: name for code, name in COUNTRY_OPTIONS}
 COUNTRY_NAME_TO_CODE = {name.lower(): code for code, name in COUNTRY_OPTIONS}
 DEFAULT_EVIDENCE_LIMIT = 1000
 EVIDENCE_ENTITY_KEYS = (
-    "emp_job", "comp", "employment", "user", "personal", "person",
-    "position", "job_code", "pay_grade", "pay_range",
+    "emp_job",
+    "comp",
+    "employment",
+    "user",
+    "personal",
+    "person",
+    "position",
+    "job_code",
+    "pay_grade",
+    "pay_range",
 )
 SENSITIVE_FIELD_MARKERS = (
-    "name", "firstname", "lastname", "displayname", "email", "address", "phone",
-    "birth", "national", "person", "user", "employee", "paycompvalue", "amount",
-    "salary", "iban", "bank", "account", "ssn", "tax",
+    "name",
+    "firstname",
+    "lastname",
+    "displayname",
+    "email",
+    "address",
+    "phone",
+    "birth",
+    "national",
+    "person",
+    "user",
+    "employee",
+    "paycompvalue",
+    "amount",
+    "salary",
+    "iban",
+    "bank",
+    "account",
+    "ssn",
+    "tax",
 )
 
 
@@ -136,7 +250,9 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
         password = credentials.get("password") or ""
         _validate_sf_url(base_url)
         if not username or not password:
-            self._json(400, {"ok": False, "message": "Username and password are required"})
+            self._json(
+                400, {"ok": False, "message": "Username and password are required"}
+            )
             return
 
         status, body, content_type = _sf_get(
@@ -146,32 +262,51 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
             accept="application/xml",
         )
         if 200 <= status < 300 and b"EntityType" in body[:200000]:
-            self._json(200, {"ok": True, "message": "Connected - OData metadata endpoint is reachable"})
+            self._json(
+                200,
+                {
+                    "ok": True,
+                    "message": "Connected - OData metadata endpoint is reachable",
+                },
+            )
             return
 
         snippet = _safe_snippet(body, content_type)
-        self._json(status, {"ok": False, "message": f"HTTP {status} from SuccessFactors", "detail": snippet})
+        self._json(
+            status,
+            {
+                "ok": False,
+                "message": f"HTTP {status} from SuccessFactors",
+                "detail": snippet,
+            },
+        )
 
     def _api_get_credentials(self):
         if not LIVE_MODE:
-            self._json(200, {
-                "ok": True,
-                "liveMode": False,
-                "baseUrl": "",
-                "companyId": "",
-                "username": "",
-                "hasPassword": False,
-            })
+            self._json(
+                200,
+                {
+                    "ok": True,
+                    "liveMode": False,
+                    "baseUrl": "",
+                    "companyId": "",
+                    "username": "",
+                    "hasPassword": False,
+                },
+            )
             return
         saved = _load_credentials()
-        self._json(200, {
-            "ok": True,
-            "liveMode": True,
-            "baseUrl": saved.get("baseUrl", ""),
-            "companyId": saved.get("companyId", ""),
-            "username": saved.get("username", ""),
-            "hasPassword": bool(saved.get("password")),
-        })
+        self._json(
+            200,
+            {
+                "ok": True,
+                "liveMode": True,
+                "baseUrl": saved.get("baseUrl", ""),
+                "companyId": saved.get("companyId", ""),
+                "username": saved.get("username", ""),
+                "hasPassword": bool(saved.get("password")),
+            },
+        )
 
     def _api_countries(self):
         if not LIVE_MODE:
@@ -187,7 +322,9 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
         _validate_sf_url(base_url)
         metadata = _fetch_metadata(base_url, username, password)
         resolved = _resolve_entities(metadata["entities"], metadata["properties"])
-        countries = _get_country_options(base_url, username, password, metadata["properties"], resolved)
+        countries = _get_country_options(
+            base_url, username, password, metadata["properties"], resolved
+        )
         self._json(200, {"ok": True, "countries": countries})
 
     def _api_save_credentials(self, payload: dict):
@@ -202,8 +339,18 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
             "password": password,
         }
         _validate_sf_url(credentials["baseUrl"])
-        if not credentials["companyId"] or not credentials["username"] or not credentials["password"]:
-            self._json(400, {"ok": False, "message": "Base URL, company ID, username, and password are required"})
+        if (
+            not credentials["companyId"]
+            or not credentials["username"]
+            or not credentials["password"]
+        ):
+            self._json(
+                400,
+                {
+                    "ok": False,
+                    "message": "Base URL, company ID, username, and password are required",
+                },
+            )
             return
         _save_credentials(credentials)
         self._json(200, {"ok": True, "message": "Credentials saved locally"})
@@ -217,7 +364,9 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
         password = credentials.get("password") or ""
         _validate_sf_url(base_url)
         if not username or not password:
-            self._json(400, {"ok": False, "message": "Username and password are required"})
+            self._json(
+                400, {"ok": False, "message": "Username and password are required"}
+            )
             return
 
         metadata = _fetch_metadata(base_url, username, password)
@@ -238,74 +387,177 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
         req_locale = resolved.get("req_locale")
         offer = resolved.get("offer")
 
-        pay_grade_rows = _has_rows_for(base_url, username, password, properties, pay_grade)
-        pay_range_rows = _has_rows_for(base_url, username, password, properties, pay_range)
-        job_code_rows = _has_rows_for(base_url, username, password, properties, job_code)
-        position_rows = _has_rows_for(base_url, username, password, properties, position)
+        pay_grade_rows = _has_rows_for(
+            base_url, username, password, properties, pay_grade
+        )
+        pay_range_rows = _has_rows_for(
+            base_url, username, password, properties, pay_range
+        )
+        job_code_rows = _has_rows_for(
+            base_url, username, password, properties, job_code
+        )
+        position_rows = _has_rows_for(
+            base_url, username, password, properties, position
+        )
         comp_rows = _has_rows_for(base_url, username, password, properties, comp)
         emp_job_rows = _has_rows_for(base_url, username, password, properties, emp_job)
 
         checks["pg_exists"] = 100 if pay_grade_rows else 0
-        checks["pg_values"] = _score_pay_range(properties, pay_range, pay_range_rows, position, position_rows)
-        checks["pg_mapped"] = _score_any_mapping(properties, (position, job_code, emp_job), ("payGrade", "payRange", "grade", "payScale", "cust_PayRange"))
-        checks["pg_dated"] = 100 if pay_grade and _has_any_field(properties, pay_grade, ("startDate", "endDate", "effectiveStartDate", "effectiveEndDate")) and pay_grade_rows else 0
+        checks["pg_values"] = _score_pay_range(
+            properties, pay_range, pay_range_rows, position, position_rows
+        )
+        checks["pg_mapped"] = _score_any_mapping(
+            properties,
+            (position, job_code, emp_job),
+            ("payGrade", "payRange", "grade", "payScale", "cust_PayRange"),
+        )
+        checks["pg_dated"] = (
+            100
+            if pay_grade
+            and _has_any_field(
+                properties,
+                pay_grade,
+                ("startDate", "endDate", "effectiveStartDate", "effectiveEndDate"),
+            )
+            and pay_grade_rows
+            else 0
+        )
 
         checks["ja_hierarchy"] = 100 if job_code_rows else 0
         checks["ja_positions"] = 100 if position_rows else 0
-        checks["ja_families"] = _score_any_mapping(properties, (job_code, position, emp_job), ("jobFunction", "jobFamily", "jobSubFunction", "jobLevel"))
+        checks["ja_families"] = _score_any_mapping(
+            properties,
+            (job_code, position, emp_job),
+            ("jobFunction", "jobFamily", "jobSubFunction", "jobLevel"),
+        )
 
         checks["cd_base"] = 100 if comp_rows else 0
-        checks["cd_currency"] = 100 if comp and _has_any_field(properties, comp, ("currencyCode", "currency")) and comp_rows else 0
-        checks["cd_history"] = 100 if comp and _has_any_field(properties, comp, ("startDate", "endDate", "seqNumber", "effectiveLatestChange")) and comp_rows else 0
+        checks["cd_currency"] = (
+            100
+            if comp
+            and _has_any_field(properties, comp, ("currencyCode", "currency"))
+            and comp_rows
+            else 0
+        )
+        checks["cd_history"] = (
+            100
+            if comp
+            and _has_any_field(
+                properties,
+                comp,
+                ("startDate", "endDate", "seqNumber", "effectiveLatestChange"),
+            )
+            and comp_rows
+            else 0
+        )
 
-        users = _sample_entity(base_url, username, password, properties, "User", ("firstName", "gender"), top=100)
+        users = _sample_entity(
+            base_url,
+            username,
+            password,
+            properties,
+            "User",
+            ("firstName", "gender"),
+            top=100,
+        )
         if users:
             with_gender = sum(1 for row in users if row.get("gender"))
             pct = round((with_gender / len(users)) * 100)
             checks["cd_gender"] = 100 if pct >= 95 else 50 if pct >= 80 else 10
             checks["gr_gender"] = checks["cd_gender"]
         elif "PerPersonal" in entities:
-            personal = _sample_entity(base_url, username, password, properties, "PerPersonal", ("personIdExternal", "gender"), top=100)
+            personal = _sample_entity(
+                base_url,
+                username,
+                password,
+                properties,
+                "PerPersonal",
+                ("personIdExternal", "gender"),
+                top=100,
+            )
             if personal:
                 with_gender = sum(1 for row in personal if row.get("gender"))
                 pct = round((with_gender / len(personal)) * 100)
                 checks["cd_gender"] = 100 if pct >= 95 else 50 if pct >= 80 else 10
                 checks["gr_gender"] = checks["cd_gender"]
 
-        can_calculate_category_avg = bool(comp_rows and checks["cd_gender"] > 0 and (position_rows or emp_job_rows or job_code_rows))
-        checks["pd_profile"] = 80 if comp_rows and ("User" in entities or "PerPersonal" in entities) else 0
-        checks["pd_avg_levels"] = 100 if resolved.get("pay_info_response") else (50 if can_calculate_category_avg else 0)
+        can_calculate_category_avg = bool(
+            comp_rows
+            and checks["cd_gender"] > 0
+            and (position_rows or emp_job_rows or job_code_rows)
+        )
+        checks["pd_profile"] = (
+            80 if comp_rows and ("User" in entities or "PerPersonal" in entities) else 0
+        )
+        checks["pd_avg_levels"] = (
+            100
+            if resolved.get("pay_info_response")
+            else (50 if can_calculate_category_avg else 0)
+        )
         checks["pd_request"] = 100 if resolved.get("pay_info_request") else 0
 
-        checks["gr_wfa"] = 100 if resolved.get("pay_gap_report") else (40 if can_calculate_category_avg else 0)
-        checks["gr_5pct"] = 100 if resolved.get("pay_gap_alert") else (30 if can_calculate_category_avg else 0)
-        checks["gr_notify"] = 100 if resolved.get("workflow") and checks["gr_5pct"] >= 100 else 0
+        checks["gr_wfa"] = (
+            100
+            if resolved.get("pay_gap_report")
+            else (40 if can_calculate_category_avg else 0)
+        )
+        checks["gr_5pct"] = (
+            100
+            if resolved.get("pay_gap_alert")
+            else (30 if can_calculate_category_avg else 0)
+        )
+        checks["gr_notify"] = (
+            100 if resolved.get("workflow") and checks["gr_5pct"] >= 100 else 0
+        )
 
         if requisition:
-            checks["hd_req"] = _score_requisition_pay_fields(base_url, username, password, properties, requisition)
+            checks["hd_req"] = _score_requisition_pay_fields(
+                base_url, username, password, properties, requisition
+            )
             checks["hd_career"] = 70 if req_locale else 30
             if req_locale:
-                checks["hd_career"] = max(checks["hd_career"], _score_requisition_locale_text(base_url, username, password, properties, req_locale))
+                checks["hd_career"] = max(
+                    checks["hd_career"],
+                    _score_requisition_locale_text(
+                        base_url, username, password, properties, req_locale
+                    ),
+                )
             checks["hd_offer"] = 70 if offer else 0
 
-        checks["ja_trigger"] = 100 if resolved.get("pay_gap_alert") else (30 if can_calculate_category_avg else 0)
-        checks["ja_workflow"] = 100 if resolved.get("workflow") and checks["ja_trigger"] >= 100 else 0
+        checks["ja_trigger"] = (
+            100
+            if resolved.get("pay_gap_alert")
+            else (30 if can_calculate_category_avg else 0)
+        )
+        checks["ja_workflow"] = (
+            100 if resolved.get("workflow") and checks["ja_trigger"] >= 100 else 0
+        )
         checks["ja_remediation"] = 100 if resolved.get("remediation") else 0
 
         checks["dg_audit"] = _score_audit_governance(entities, properties)
         checks["dg_rbp"] = 80 if resolved.get("permission") else 0
-        checks["dg_country"] = 60 if checks["dg_rbp"] and _score_any_mapping(properties, (emp_job, position), ("country", "company", "location")) else 0
+        checks["dg_country"] = (
+            60
+            if checks["dg_rbp"]
+            and _score_any_mapping(
+                properties, (emp_job, position), ("country", "company", "location")
+            )
+            else 0
+        )
 
-        self._json(200, {
-            "ok": True,
-            "checkResults": checks,
-            "resolvedEntities": resolved,
-            "dataPullMode": {
-                "metadata": "full /odata/v2/$metadata",
-                "tenantData": "targeted samples from resolved entities",
-                "fullTenantAudit": False,
+        self._json(
+            200,
+            {
+                "ok": True,
+                "checkResults": checks,
+                "resolvedEntities": resolved,
+                "dataPullMode": {
+                    "metadata": "full /odata/v2/$metadata",
+                    "tenantData": "targeted samples from resolved entities",
+                    "fullTenantAudit": False,
+                },
             },
-        })
+        )
 
     def _api_evidence_pack(self, payload: dict):
         if not self._require_live_mode():
@@ -316,41 +568,56 @@ class PayTransparencyHandler(BaseHTTPRequestHandler):
         password = credentials.get("password") or ""
         _validate_sf_url(base_url)
         if not username or not password:
-            self._json(400, {"ok": False, "message": "Username and password are required"})
+            self._json(
+                400, {"ok": False, "message": "Username and password are required"}
+            )
             return
 
-        limit = _bounded_int(payload.get("limit"), default=DEFAULT_EVIDENCE_LIMIT, minimum=100, maximum=5000)
+        limit = _bounded_int(
+            payload.get("limit"),
+            default=DEFAULT_EVIDENCE_LIMIT,
+            minimum=100,
+            maximum=5000,
+        )
         country_filter = (payload.get("country") or "").strip()
         metadata = _fetch_metadata(base_url, username, password)
         entities = metadata["entities"]
         properties = metadata["properties"]
         resolved = _resolve_entities(entities, properties)
-        evidence = _build_evidence_pack(base_url, username, password, properties, resolved, limit, country_filter)
+        evidence = _build_evidence_pack(
+            base_url, username, password, properties, resolved, limit, country_filter
+        )
         raw_evidence = evidence.pop("_raw", {})
         article9 = _calculate_article9({"_raw": raw_evidence}, resolved)
-        self._json(200, {
-            "ok": True,
-            "generatedAt": _now_iso(),
-            "limitPerEntity": limit,
-            "countryFilter": country_filter,
-            "resolvedEntities": resolved,
-            "evidence": evidence,
-            "article9": article9,
-            "dataPullMode": {
-                "metadata": "full /odata/v2/$metadata",
-                "tenantData": f"Article 9 cohort evidence pull, capped at {limit} rows per relevant entity",
-                "fullTenantAudit": False,
+        self._json(
+            200,
+            {
+                "ok": True,
+                "generatedAt": _now_iso(),
+                "limitPerEntity": limit,
+                "countryFilter": country_filter,
+                "resolvedEntities": resolved,
+                "evidence": evidence,
+                "article9": article9,
+                "dataPullMode": {
+                    "metadata": "full /odata/v2/$metadata",
+                    "tenantData": f"Article 9 cohort evidence pull, capped at {limit} rows per relevant entity",
+                    "fullTenantAudit": False,
+                },
             },
-        })
+        )
 
     def _require_live_mode(self) -> bool:
         if LIVE_MODE:
             return True
-        self._json(403, {
-            "ok": False,
-            "liveMode": False,
-            "message": "Live tenant mode is disabled. Restart locally with SFPT_LIVE_MODE=1 to save credentials or call SuccessFactors OData.",
-        })
+        self._json(
+            403,
+            {
+                "ok": False,
+                "liveMode": False,
+                "message": "Live tenant mode is disabled. Restart locally with SFPT_LIVE_MODE=1 to save credentials or call SuccessFactors OData.",
+            },
+        )
         return False
 
     def _read_json(self) -> dict:
@@ -432,7 +699,9 @@ def _validate_sf_url(base_url: str):
         raise ValueError("Base URL host is not an SAP SuccessFactors API host")
 
 
-def _sf_get(url: str, username: str, password: str, accept: str = "application/json") -> tuple[int, bytes, str]:
+def _sf_get(
+    url: str, username: str, password: str, accept: str = "application/json"
+) -> tuple[int, bytes, str]:
     token = base64.b64encode(f"{username}:{password}".encode("utf-8")).decode("ascii")
     req = Request(
         url,
@@ -451,11 +720,15 @@ def _sf_get(url: str, username: str, password: str, accept: str = "application/j
         raise RuntimeError(f"Could not reach SuccessFactors: {exc.reason}") from exc
 
 
-def _entity_has_rows(base_url: str, username: str, password: str, entity: str, fields: str) -> bool:
+def _entity_has_rows(
+    base_url: str, username: str, password: str, entity: str, fields: str
+) -> bool:
     return bool(_entity_results(base_url, username, password, entity, fields, top=1))
 
 
-def _entity_results(base_url: str, username: str, password: str, entity: str, fields: str, top: int) -> list[dict]:
+def _entity_results(
+    base_url: str, username: str, password: str, entity: str, fields: str, top: int
+) -> list[dict]:
     url = f"{base_url}/odata/v2/{entity}?$top={top}&$select={fields}&$format=json"
     status, body, content_type = _sf_get(url, username, password)
     if not (200 <= status < 300):
@@ -487,13 +760,17 @@ def _entity_results_paged(
     safe_page_size = min(page_size, limit)
     select = ",".join(fields)
     while len(rows) < limit:
-        query = urlencode({
-            "$top": safe_page_size,
-            "$skip": skip,
-            "$select": select,
-            "$format": "json",
-        })
-        status, body, _content_type = _sf_get(f"{base_url}/odata/v2/{entity}?{query}", username, password)
+        query = urlencode(
+            {
+                "$top": safe_page_size,
+                "$skip": skip,
+                "$select": select,
+                "$format": "json",
+            }
+        )
+        status, body, _content_type = _sf_get(
+            f"{base_url}/odata/v2/{entity}?{query}", username, password
+        )
         if not (200 <= status < 300):
             break
         try:
@@ -501,7 +778,9 @@ def _entity_results_paged(
         except json.JSONDecodeError:
             break
         page = []
-        if isinstance(data.get("d"), dict) and isinstance(data["d"].get("results"), list):
+        if isinstance(data.get("d"), dict) and isinstance(
+            data["d"].get("results"), list
+        ):
             page = data["d"]["results"]
         elif isinstance(data.get("results"), list):
             page = data["results"]
@@ -531,14 +810,18 @@ def _entity_results_filtered(
     safe_page_size = min(page_size, limit)
     select = ",".join(fields)
     while len(rows) < limit:
-        query = urlencode({
-            "$top": safe_page_size,
-            "$skip": skip,
-            "$select": select,
-            "$filter": filter_expr,
-            "$format": "json",
-        })
-        status, body, _content_type = _sf_get(f"{base_url}/odata/v2/{entity}?{query}", username, password)
+        query = urlencode(
+            {
+                "$top": safe_page_size,
+                "$skip": skip,
+                "$select": select,
+                "$filter": filter_expr,
+                "$format": "json",
+            }
+        )
+        status, body, _content_type = _sf_get(
+            f"{base_url}/odata/v2/{entity}?{query}", username, password
+        )
         if not (200 <= status < 300):
             break
         try:
@@ -546,7 +829,9 @@ def _entity_results_filtered(
         except json.JSONDecodeError:
             break
         page = []
-        if isinstance(data.get("d"), dict) and isinstance(data["d"].get("results"), list):
+        if isinstance(data.get("d"), dict) and isinstance(
+            data["d"].get("results"), list
+        ):
             page = data["d"]["results"]
         elif isinstance(data.get("results"), list):
             page = data["results"]
@@ -586,7 +871,9 @@ def _fetch_metadata(base_url: str, username: str, password: str) -> dict:
     return {"entities": entities, "properties": properties}
 
 
-def _has_any_field(properties: dict[str, set[str]], entity: str, needles: tuple[str, ...]) -> bool:
+def _has_any_field(
+    properties: dict[str, set[str]], entity: str, needles: tuple[str, ...]
+) -> bool:
     fields = properties.get(entity, set())
     lower_fields = [field.lower() for field in fields]
     return any(needle.lower() in field for needle in needles for field in lower_fields)
@@ -603,7 +890,9 @@ def _has_entity_matching(entities: set[str], candidates: tuple[str, ...]) -> boo
     return False
 
 
-def _first_existing_entity(entities: set[str], candidates: tuple[str, ...]) -> str | None:
+def _first_existing_entity(
+    entities: set[str], candidates: tuple[str, ...]
+) -> str | None:
     for candidate in candidates:
         if candidate in entities:
             return candidate
@@ -616,26 +905,71 @@ def _first_existing_entity(entities: set[str], candidates: tuple[str, ...]) -> s
     return None
 
 
-def _resolve_entities(entities: set[str], properties: dict[str, set[str]]) -> dict[str, str | None]:
+def _resolve_entities(
+    entities: set[str], properties: dict[str, set[str]]
+) -> dict[str, str | None]:
     return {
-        "pay_grade": _best_entity(entities, properties, ("FOPayGrade", "PayGrade"), ("pay", "grade")),
-        "pay_range": _best_entity(entities, properties, ("FOPayRange", "PayRange", "PayScaleLevel"), ("pay", "range")),
-        "job_code": _best_entity(entities, properties, ("FOJobCode", "JobClassification", "JobProfile"), ("job",)),
+        "pay_grade": _best_entity(
+            entities, properties, ("FOPayGrade", "PayGrade"), ("pay", "grade")
+        ),
+        "pay_range": _best_entity(
+            entities,
+            properties,
+            ("FOPayRange", "PayRange", "PayScaleLevel"),
+            ("pay", "range"),
+        ),
+        "job_code": _best_entity(
+            entities,
+            properties,
+            ("FOJobCode", "JobClassification", "JobProfile"),
+            ("job",),
+        ),
         "position": _best_entity(entities, properties, ("Position",), ("position",)),
         "emp_job": _best_entity(entities, properties, ("EmpJob",), ("emp", "job")),
-        "employment": _best_entity(entities, properties, ("EmpEmployment",), ("employment",)),
+        "employment": _best_entity(
+            entities, properties, ("EmpEmployment",), ("employment",)
+        ),
         "person": _best_entity(entities, properties, ("PerPerson",), ("person",)),
-        "comp": _best_entity(entities, properties, ("EmpPayCompRecurring", "EmpCompensation"), ("pay", "comp")),
+        "comp": _best_entity(
+            entities,
+            properties,
+            ("EmpPayCompRecurring", "EmpCompensation"),
+            ("pay", "comp"),
+        ),
         "requisition": _exact_entity(entities, ("JobRequisition",)),
-        "req_locale": _exact_entity(entities, ("JobRequisitionLocale", "JobReqPosting", "JobRequisitionPosting")),
+        "req_locale": _exact_entity(
+            entities, ("JobRequisitionLocale", "JobReqPosting", "JobRequisitionPosting")
+        ),
         "offer": _exact_entity(entities, ("OfferLetter", "JobOffer", "OfferDetail")),
-        "workflow": _exact_entity(entities, ("WfRequest", "Workflow", "MyPendingWorkflow")),
-        "permission": _exact_entity(entities, ("RBPBasicPermission", "UserPermissions", "PermissionRole", "PermissionGroup")),
-        "pay_info_response": _exact_entity(entities, ("Pay_Info_Response", "PayInformationResponse", "PayTransparencyResponse")),
-        "pay_info_request": _exact_entity(entities, ("Pay_Info_Request", "PayInformationRequest", "PayComparisonRequest")),
-        "pay_gap_report": _exact_entity(entities, ("PayGapReport", "PayEquityReport", "PayTransparencyReport")),
-        "pay_gap_alert": _exact_entity(entities, ("PayGapAlert", "GapAlert", "PayTransparencyAlert")),
-        "remediation": _exact_entity(entities, ("Remediation_Action", "RemediationAction", "PayGapRemediation")),
+        "workflow": _exact_entity(
+            entities, ("WfRequest", "Workflow", "MyPendingWorkflow")
+        ),
+        "permission": _exact_entity(
+            entities,
+            (
+                "RBPBasicPermission",
+                "UserPermissions",
+                "PermissionRole",
+                "PermissionGroup",
+            ),
+        ),
+        "pay_info_response": _exact_entity(
+            entities,
+            ("Pay_Info_Response", "PayInformationResponse", "PayTransparencyResponse"),
+        ),
+        "pay_info_request": _exact_entity(
+            entities,
+            ("Pay_Info_Request", "PayInformationRequest", "PayComparisonRequest"),
+        ),
+        "pay_gap_report": _exact_entity(
+            entities, ("PayGapReport", "PayEquityReport", "PayTransparencyReport")
+        ),
+        "pay_gap_alert": _exact_entity(
+            entities, ("PayGapAlert", "GapAlert", "PayTransparencyAlert")
+        ),
+        "remediation": _exact_entity(
+            entities, ("Remediation_Action", "RemediationAction", "PayGapRemediation")
+        ),
     }
 
 
@@ -689,7 +1023,9 @@ def _has_rows_for(
 ) -> bool:
     if not entity:
         return False
-    return bool(_sample_entity(base_url, username, password, properties, entity, (), top=1))
+    return bool(
+        _sample_entity(base_url, username, password, properties, entity, (), top=1)
+    )
 
 
 def _sample_entity(
@@ -709,13 +1045,24 @@ def _sample_entity(
         selected = _default_select_fields(entity_fields)
     if not selected:
         return []
-    return _entity_results(base_url, username, password, entity, ",".join(selected), top=top)
+    return _entity_results(
+        base_url, username, password, entity, ",".join(selected), top=top
+    )
 
 
 def _default_select_fields(fields: set[str]) -> list[str]:
     priority = (
-        "externalCode", "code", "name", "userId", "personIdExternal", "jobReqId",
-        "startDate", "effectiveStartDate", "payComponent", "paycompvalue", "currencyCode",
+        "externalCode",
+        "code",
+        "name",
+        "userId",
+        "personIdExternal",
+        "jobReqId",
+        "startDate",
+        "effectiveStartDate",
+        "payComponent",
+        "paycompvalue",
+        "currencyCode",
     )
     selected = [field for field in priority if field in fields]
     if selected:
@@ -732,14 +1079,30 @@ def _score_pay_range(
 ) -> int:
     if pay_range and pay_range_rows:
         return 100
-    if position and position_rows and _has_any_field(properties, position, ("PayRange_Min", "PayRange_Max", "PayRange_Mid", "payRange")):
+    if (
+        position
+        and position_rows
+        and _has_any_field(
+            properties,
+            position,
+            ("PayRange_Min", "PayRange_Max", "PayRange_Mid", "payRange"),
+        )
+    ):
         return 90
-    if position and position_rows and _has_any_field(properties, position, ("pay", "salary", "range")):
+    if (
+        position
+        and position_rows
+        and _has_any_field(properties, position, ("pay", "salary", "range"))
+    ):
         return 60
     return 0
 
 
-def _score_any_mapping(properties: dict[str, set[str]], entities: tuple[str | None, ...], needles: tuple[str, ...]) -> int:
+def _score_any_mapping(
+    properties: dict[str, set[str]],
+    entities: tuple[str | None, ...],
+    needles: tuple[str, ...],
+) -> int:
     for entity in entities:
         if entity and _has_any_field(properties, entity, needles):
             return 100
@@ -756,7 +1119,9 @@ def _score_requisition_pay_fields(
     fields = _matching_fields(properties, requisition, PAY_TEXT_MARKERS)
     if not fields:
         return 0
-    sample = _sample_entity(base_url, username, password, properties, requisition, tuple(fields[:8]), top=10)
+    sample = _sample_entity(
+        base_url, username, password, properties, requisition, tuple(fields[:8]), top=10
+    )
     if sample and _has_nonempty_field(sample, fields):
         return 100
     return 60
@@ -769,15 +1134,24 @@ def _score_requisition_locale_text(
     properties: dict[str, set[str]],
     req_locale: str,
 ) -> int:
-    desc_fields = _matching_fields(properties, req_locale, ("externalJobDescription", "jobDescription", "extJobDesc", "description"))
+    desc_fields = _matching_fields(
+        properties,
+        req_locale,
+        ("externalJobDescription", "jobDescription", "extJobDesc", "description"),
+    )
     if not desc_fields:
         return 30
-    sample = _sample_entity(base_url, username, password, properties, req_locale, tuple(desc_fields[:6]), top=10)
+    sample = _sample_entity(
+        base_url,
+        username,
+        password,
+        properties,
+        req_locale,
+        tuple(desc_fields[:6]),
+        top=10,
+    )
     text = " ".join(
-        str(value)
-        for row in sample
-        for value in row.values()
-        if value is not None
+        str(value) for row in sample for value in row.values() if value is not None
     ).lower()
     if any(marker in text for marker in MONEY_TEXT_MARKERS):
         return 100
@@ -788,13 +1162,21 @@ def _score_audit_governance(entities: set[str], properties: dict[str, set[str]])
     if _has_entity_matching(entities, ("FormAuditTrail", "AuditData", "ChangeAudit")):
         return 80
     if _first_existing_entity(entities, ("EmpCompensation", "EmpPayCompRecurring")):
-        comp_entity = _first_existing_entity(entities, ("EmpCompensation", "EmpPayCompRecurring"))
-        if comp_entity and _has_any_field(properties, comp_entity, ("createdBy", "createdOn", "lastModifiedBy", "lastModifiedOn")):
+        comp_entity = _first_existing_entity(
+            entities, ("EmpCompensation", "EmpPayCompRecurring")
+        )
+        if comp_entity and _has_any_field(
+            properties,
+            comp_entity,
+            ("createdBy", "createdOn", "lastModifiedBy", "lastModifiedOn"),
+        ):
             return 50
     return 0
 
 
-def _matching_fields(properties: dict[str, set[str]], entity: str, needles: tuple[str, ...]) -> list[str]:
+def _matching_fields(
+    properties: dict[str, set[str]], entity: str, needles: tuple[str, ...]
+) -> list[str]:
     fields = properties.get(entity, set())
     matches = []
     for field in sorted(fields):
@@ -838,7 +1220,7 @@ def _unique_preserve_order(values: list[str]) -> list[str]:
 
 def _chunks(values: list[str], size: int):
     for i in range(0, len(values), size):
-        yield values[i:i + size]
+        yield values[i : i + size]
 
 
 def _odata_quote(value: str) -> str:
@@ -890,7 +1272,9 @@ def _build_evidence_pack(
         "entities": {},
         "_raw": {},
     }
-    cohort = _build_user_cohort(base_url, username, password, properties, resolved, limit, country_filter)
+    cohort = _build_user_cohort(
+        base_url, username, password, properties, resolved, limit, country_filter
+    )
     if cohort:
         evidence["cohort"] = {
             "userCount": len(cohort.get("userIds", [])),
@@ -900,14 +1284,31 @@ def _build_evidence_pack(
             "strictCountryFilter": bool(country_filter),
             "matched": bool(cohort.get("userIds") or cohort.get("personIds")),
         }
-    required_purposes = {"emp_job", "comp", "employment", "user", "personal", "person", "position"}
+    required_purposes = {
+        "emp_job",
+        "comp",
+        "employment",
+        "user",
+        "personal",
+        "person",
+        "position",
+    }
     for purpose in EVIDENCE_ENTITY_KEYS:
         entity = entity_map.get(purpose)
         if not entity:
             continue
         fields = _evidence_fields_for(purpose, entity, properties.get(entity, set()))
         rows = _cohort_rows_for_purpose(
-            base_url, username, password, properties, purpose, entity, fields, limit, cohort, country_filter
+            base_url,
+            username,
+            password,
+            properties,
+            purpose,
+            entity,
+            fields,
+            limit,
+            cohort,
+            country_filter,
         )
         if not rows and purpose not in required_purposes:
             continue
@@ -933,43 +1334,87 @@ def _build_user_cohort(
 ) -> dict:
     emp_job_entity = resolved.get("emp_job")
     user_entity = "User" if "User" in properties else None
-    emp_job_fields = _evidence_fields_for("emp_job", emp_job_entity, properties.get(emp_job_entity, set())) if emp_job_entity else []
-    user_fields = _evidence_fields_for("user", user_entity, properties.get(user_entity, set())) if user_entity else []
+    emp_job_fields = (
+        _evidence_fields_for(
+            "emp_job", emp_job_entity, properties.get(emp_job_entity, set())
+        )
+        if emp_job_entity
+        else []
+    )
+    user_fields = (
+        _evidence_fields_for("user", user_entity, properties.get(user_entity, set()))
+        if user_entity
+        else []
+    )
 
     emp_job_rows = []
     anchor = ""
     if emp_job_entity and emp_job_fields:
         if country_filter:
-            country_field = _first_existing_field(properties.get(emp_job_entity, set()), ("countryOfCompany", "country", "company", "location"))
+            country_field = _first_existing_field(
+                properties.get(emp_job_entity, set()),
+                ("countryOfCompany", "country", "company", "location"),
+            )
             if country_field:
                 emp_job_rows = _entity_results_filtered(
-                    base_url, username, password, emp_job_entity, emp_job_fields,
-                    _country_filter_expr(country_field, country_filter), limit
+                    base_url,
+                    username,
+                    password,
+                    emp_job_entity,
+                    emp_job_fields,
+                    _country_filter_expr(country_field, country_filter),
+                    limit,
                 )
                 anchor = f"{emp_job_entity}.{country_field}"
-                if not emp_job_rows and country_field != "company" and "company" in properties.get(emp_job_entity, set()):
+                if (
+                    not emp_job_rows
+                    and country_field != "company"
+                    and "company" in properties.get(emp_job_entity, set())
+                ):
                     emp_job_rows = _entity_results_filtered(
-                        base_url, username, password, emp_job_entity, emp_job_fields,
-                        _country_filter_expr("company", country_filter), limit
+                        base_url,
+                        username,
+                        password,
+                        emp_job_entity,
+                        emp_job_fields,
+                        _country_filter_expr("company", country_filter),
+                        limit,
                     )
                     if emp_job_rows:
                         anchor = f"{emp_job_entity}.company"
         if not emp_job_rows and not country_filter:
-            emp_job_rows = _entity_results_paged(base_url, username, password, emp_job_entity, emp_job_fields, limit=limit)
+            emp_job_rows = _entity_results_paged(
+                base_url,
+                username,
+                password,
+                emp_job_entity,
+                emp_job_fields,
+                limit=limit,
+            )
             anchor = emp_job_entity
 
     user_rows = []
     if user_entity and user_fields:
         if country_filter:
-            country_field = _first_existing_field(properties.get(user_entity, set()), ("country", "countryOfCompany", "location"))
+            country_field = _first_existing_field(
+                properties.get(user_entity, set()),
+                ("country", "countryOfCompany", "location"),
+            )
             if country_field:
                 user_rows = _entity_results_filtered(
-                    base_url, username, password, user_entity, user_fields,
-                    _country_filter_expr(country_field, country_filter), limit
+                    base_url,
+                    username,
+                    password,
+                    user_entity,
+                    user_fields,
+                    _country_filter_expr(country_field, country_filter),
+                    limit,
                 )
                 anchor = anchor or f"{user_entity}.{country_field}"
         if not user_rows and not emp_job_rows and not country_filter:
-            user_rows = _entity_results_paged(base_url, username, password, user_entity, user_fields, limit=limit)
+            user_rows = _entity_results_paged(
+                base_url, username, password, user_entity, user_fields, limit=limit
+            )
             anchor = user_entity
 
     user_ids = []
@@ -1004,7 +1449,16 @@ def _build_user_cohort(
 
     user_ids = _unique_preserve_order(user_ids)[:limit]
     if user_ids and user_entity and not user_rows:
-        user_rows = _fetch_by_ids(base_url, username, password, user_entity, user_fields, "userId", user_ids, limit)
+        user_rows = _fetch_by_ids(
+            base_url,
+            username,
+            password,
+            user_entity,
+            user_fields,
+            "userId",
+            user_ids,
+            limit,
+        )
         for row in user_rows:
             pid = _first_value(row, ("personIdExternal", "personId"))
             if pid:
@@ -1012,8 +1466,19 @@ def _build_user_cohort(
 
     employment_entity = resolved.get("employment")
     if user_ids and employment_entity:
-        employment_fields = _evidence_fields_for("employment", employment_entity, properties.get(employment_entity, set()))
-        employment_rows = _fetch_by_ids(base_url, username, password, employment_entity, employment_fields, "userId", user_ids, limit)
+        employment_fields = _evidence_fields_for(
+            "employment", employment_entity, properties.get(employment_entity, set())
+        )
+        employment_rows = _fetch_by_ids(
+            base_url,
+            username,
+            password,
+            employment_entity,
+            employment_fields,
+            "userId",
+            user_ids,
+            limit,
+        )
         for row in employment_rows:
             pid = _first_value(row, ("personIdExternal", "personId"))
             if pid:
@@ -1063,36 +1528,103 @@ def _cohort_rows_for_purpose(
     if purpose in ("comp", "emp_job", "employment", "permission") and user_ids:
         id_field = _first_existing_field(entity_fields, ("userId", "personIdExternal"))
         if id_field:
-            return _fetch_by_ids(base_url, username, password, entity, fields, id_field, user_ids, limit)
+            return _fetch_by_ids(
+                base_url, username, password, entity, fields, id_field, user_ids, limit
+            )
     if purpose in ("personal", "person") and person_ids:
-        id_field = _first_existing_field(entity_fields, ("personIdExternal", "personId", "userId"))
+        id_field = _first_existing_field(
+            entity_fields, ("personIdExternal", "personId", "userId")
+        )
         if id_field:
-            return _fetch_by_ids(base_url, username, password, entity, fields, id_field, person_ids, limit)
+            return _fetch_by_ids(
+                base_url,
+                username,
+                password,
+                entity,
+                fields,
+                id_field,
+                person_ids,
+                limit,
+            )
     if purpose == "position" and position_ids:
-        id_field = _first_existing_field(entity_fields, ("code", "externalCode", "position", "positionId"))
+        id_field = _first_existing_field(
+            entity_fields, ("code", "externalCode", "position", "positionId")
+        )
         if id_field:
-            return _fetch_by_ids(base_url, username, password, entity, fields, id_field, position_ids, limit)
+            return _fetch_by_ids(
+                base_url,
+                username,
+                password,
+                entity,
+                fields,
+                id_field,
+                position_ids,
+                limit,
+            )
     if purpose == "job_code" and job_code_ids:
-        id_field = _first_existing_field(entity_fields, ("externalCode", "code", "jobCode"))
+        id_field = _first_existing_field(
+            entity_fields, ("externalCode", "code", "jobCode")
+        )
         if id_field:
-            return _fetch_by_ids(base_url, username, password, entity, fields, id_field, job_code_ids, limit)
+            return _fetch_by_ids(
+                base_url,
+                username,
+                password,
+                entity,
+                fields,
+                id_field,
+                job_code_ids,
+                limit,
+            )
     if purpose == "pay_grade" and pay_grade_ids:
-        id_field = _first_existing_field(entity_fields, ("externalCode", "code", "payGrade"))
+        id_field = _first_existing_field(
+            entity_fields, ("externalCode", "code", "payGrade")
+        )
         if id_field:
-            return _fetch_by_ids(base_url, username, password, entity, fields, id_field, pay_grade_ids, limit)
+            return _fetch_by_ids(
+                base_url,
+                username,
+                password,
+                entity,
+                fields,
+                id_field,
+                pay_grade_ids,
+                limit,
+            )
     if purpose == "pay_range" and pay_range_ids:
-        id_field = _first_existing_field(entity_fields, ("externalCode", "code", "payRange"))
+        id_field = _first_existing_field(
+            entity_fields, ("externalCode", "code", "payRange")
+        )
         if id_field:
-            return _fetch_by_ids(base_url, username, password, entity, fields, id_field, pay_range_ids, limit)
+            return _fetch_by_ids(
+                base_url,
+                username,
+                password,
+                entity,
+                fields,
+                id_field,
+                pay_range_ids,
+                limit,
+            )
     if country_filter:
-        country_field = _first_existing_field(entity_fields, ("country", "countryOfCompany", "company", "location", "cust_Country"))
+        country_field = _first_existing_field(
+            entity_fields,
+            ("country", "countryOfCompany", "company", "location", "cust_Country"),
+        )
         if country_field:
             rows = _entity_results_filtered(
-                base_url, username, password, entity, fields,
-                _country_filter_expr(country_field, country_filter), limit
+                base_url,
+                username,
+                password,
+                entity,
+                fields,
+                _country_filter_expr(country_field, country_filter),
+                limit,
             )
             return rows
-    return _entity_results_paged(base_url, username, password, entity, fields, limit=limit)
+    return _entity_results_paged(
+        base_url, username, password, entity, fields, limit=limit
+    )
 
 
 def _fetch_by_ids(
@@ -1111,7 +1643,11 @@ def _fetch_by_ids(
         if len(rows) >= limit:
             break
         expr = " or ".join(f"{id_field} eq '{_odata_quote(value)}'" for value in batch)
-        rows.extend(_entity_results_filtered(base_url, username, password, entity, fields, expr, limit - len(rows)))
+        rows.extend(
+            _entity_results_filtered(
+                base_url, username, password, entity, fields, expr, limit - len(rows)
+            )
+        )
     return rows[:limit]
 
 
@@ -1138,7 +1674,9 @@ def _get_country_options(
         if field:
             sources.append((entity, field))
     for entity, field in sources:
-        rows = _entity_results_paged(base_url, username, password, entity, [field], limit=2000)
+        rows = _entity_results_paged(
+            base_url, username, password, entity, [field], limit=2000
+        )
         for row in rows:
             value = row.get(field)
             if value in (None, ""):
@@ -1146,38 +1684,161 @@ def _get_country_options(
             key = str(value).strip()
             if not key:
                 continue
-            options.setdefault(key, {"value": key, "label": key, "source": f"{entity}.{field}", "count": 0})
+            options.setdefault(
+                key,
+                {"value": key, "label": key, "source": f"{entity}.{field}", "count": 0},
+            )
             options[key]["count"] += 1
     for code, name in COUNTRY_OPTIONS:
-        options.setdefault(code, {"value": code, "label": f"{name} ({code})", "source": "standard", "count": 0})
-    return sorted(options.values(), key=lambda x: (0 if x["count"] else 1, x["label"]))[:300]
+        options.setdefault(
+            code,
+            {
+                "value": code,
+                "label": f"{name} ({code})",
+                "source": "standard",
+                "count": 0,
+            },
+        )
+    return sorted(options.values(), key=lambda x: (0 if x["count"] else 1, x["label"]))[
+        :300
+    ]
 
 
 def _evidence_fields_for(purpose: str, entity: str, fields: set[str]) -> list[str]:
     preferred_by_purpose = {
-        "pay_grade": ("externalCode", "code", "name", "paygradeLevel", "startDate", "endDate", "status"),
-        "pay_range": ("externalCode", "code", "name", "minimum", "midpoint", "maximum", "currency", "startDate", "endDate"),
-        "job_code": ("externalCode", "code", "name", "grade", "jobFunction", "jobLevel", "startDate", "endDate", "status"),
-        "position": (
-            "code", "externalName_defaultValue", "jobCode", "jobTitle", "payGrade", "payRange",
-            "cust_PayRange_Min", "cust_PayRange_Mid", "cust_PayRange_Max", "cust_PayRangeCurrency",
-            "company", "location", "cust_Country", "effectiveStartDate", "effectiveEndDate",
+        "pay_grade": (
+            "externalCode",
+            "code",
+            "name",
+            "paygradeLevel",
+            "startDate",
+            "endDate",
+            "status",
         ),
-        "emp_job": ("userId", "jobCode", "position", "payGrade", "company", "location", "countryOfCompany", "startDate", "endDate"),
-        "employment": ("userId", "personIdExternal", "personId", "startDate", "endDate", "assignmentClass", "employmentId"),
-        "person": ("personIdExternal", "personId", "dateOfBirth", "countryOfBirth", "createdOn", "lastModifiedOn"),
-        "comp": ("userId", "payComponent", "paycompvalue", "currencyCode", "frequency", "startDate", "endDate", "seqNumber"),
-        "user": ("userId", "personIdExternal", "gender", "country", "department", "division", "location"),
+        "pay_range": (
+            "externalCode",
+            "code",
+            "name",
+            "minimum",
+            "midpoint",
+            "maximum",
+            "currency",
+            "startDate",
+            "endDate",
+        ),
+        "job_code": (
+            "externalCode",
+            "code",
+            "name",
+            "grade",
+            "jobFunction",
+            "jobLevel",
+            "startDate",
+            "endDate",
+            "status",
+        ),
+        "position": (
+            "code",
+            "externalName_defaultValue",
+            "jobCode",
+            "jobTitle",
+            "payGrade",
+            "payRange",
+            "cust_PayRange_Min",
+            "cust_PayRange_Mid",
+            "cust_PayRange_Max",
+            "cust_PayRangeCurrency",
+            "company",
+            "location",
+            "cust_Country",
+            "effectiveStartDate",
+            "effectiveEndDate",
+        ),
+        "emp_job": (
+            "userId",
+            "jobCode",
+            "position",
+            "payGrade",
+            "company",
+            "location",
+            "countryOfCompany",
+            "startDate",
+            "endDate",
+        ),
+        "employment": (
+            "userId",
+            "personIdExternal",
+            "personId",
+            "startDate",
+            "endDate",
+            "assignmentClass",
+            "employmentId",
+        ),
+        "person": (
+            "personIdExternal",
+            "personId",
+            "dateOfBirth",
+            "countryOfBirth",
+            "createdOn",
+            "lastModifiedOn",
+        ),
+        "comp": (
+            "userId",
+            "payComponent",
+            "paycompvalue",
+            "currencyCode",
+            "frequency",
+            "startDate",
+            "endDate",
+            "seqNumber",
+        ),
+        "user": (
+            "userId",
+            "personIdExternal",
+            "gender",
+            "country",
+            "department",
+            "division",
+            "location",
+        ),
         "personal": ("personIdExternal", "personId", "gender", "startDate", "endDate"),
-        "requisition": ("jobReqId", "templateName", "country", "currency", "salaryMin", "salaryMax", "payRange", "compensation"),
-        "req_locale": ("jobReqId", "locale", "externalTitle", "externalJobDescription", "jobDescription", "status"),
+        "requisition": (
+            "jobReqId",
+            "templateName",
+            "country",
+            "currency",
+            "salaryMin",
+            "salaryMax",
+            "payRange",
+            "compensation",
+        ),
+        "req_locale": (
+            "jobReqId",
+            "locale",
+            "externalTitle",
+            "externalJobDescription",
+            "jobDescription",
+            "status",
+        ),
         "offer": ("offerId", "jobReqId", "salary", "currency", "templateId", "status"),
-        "workflow": ("wfRequestId", "status", "createdBy", "createdOn", "lastModifiedOn"),
+        "workflow": (
+            "wfRequestId",
+            "status",
+            "createdBy",
+            "createdOn",
+            "lastModifiedOn",
+        ),
         "permission": ("userId", "roleId", "permission", "target", "lastModifiedOn"),
     }
-    selected = [field for field in preferred_by_purpose.get(purpose, ()) if field in fields]
+    selected = [
+        field for field in preferred_by_purpose.get(purpose, ()) if field in fields
+    ]
     if purpose in ("requisition", "position", "pay_range", "offer"):
-        selected.extend(field for field in _matching_fields({entity: fields}, entity, PAY_TEXT_MARKERS) if field not in selected)
+        selected.extend(
+            field
+            for field in _matching_fields({entity: fields}, entity, PAY_TEXT_MARKERS)
+            if field not in selected
+        )
     if not selected:
         selected = _default_select_fields(fields)
     return selected[:20]
@@ -1282,20 +1943,30 @@ def _calculate_article9(evidence: dict, resolved: dict[str, str | None]) -> dict
         if not gender and uid in person_by_user:
             gender = gender_by_person.get(person_by_user[uid])
         job = job_by_user.get(uid, {})
-        position = position_by_code.get(str(job.get("position")), {}) if job.get("position") else {}
+        position = (
+            position_by_code.get(str(job.get("position")), {})
+            if job.get("position")
+            else {}
+        )
         category = _worker_category(job, position)
-        country = _first_value(job, ("countryOfCompany", "country", "company", "location")) or _first_value(position, ("cust_Country", "company", "location")) or "Unmapped"
+        country = (
+            _first_value(job, ("countryOfCompany", "country", "company", "location"))
+            or _first_value(position, ("cust_Country", "company", "location"))
+            or "Unmapped"
+        )
         component = str(row.get("payComponent") or "")
-        pay_records.append({
-            "userId": uid,
-            "gender": gender,
-            "amount": amount,
-            "currency": row.get("currencyCode"),
-            "component": component,
-            "isVariable": _is_variable_component(component),
-            "category": str(category or "Unmapped"),
-            "country": str(country or "Unmapped"),
-        })
+        pay_records.append(
+            {
+                "userId": uid,
+                "gender": gender,
+                "amount": amount,
+                "currency": row.get("currencyCode"),
+                "component": component,
+                "isVariable": _is_variable_component(component),
+                "category": str(category or "Unmapped"),
+                "country": str(country or "Unmapped"),
+            }
+        )
 
     usable = [row for row in pay_records if row["gender"] in ("female", "male")]
     groups = {}
@@ -1314,22 +1985,24 @@ def _calculate_article9(evidence: dict, resolved: dict[str, str | None]) -> dict
         male_median = _median(male)
         female_median = _median(female)
         variable_rows = [row for row in rows if row["isVariable"]]
-        category_results.append({
-            "country": country,
-            "workerCategory": category,
-            "currency": currency,
-            "employees": len({row["userId"] for row in rows}),
-            "femaleCount": len(female),
-            "maleCount": len(male),
-            "meanFemalePay": round(female_mean, 2),
-            "meanMalePay": round(male_mean, 2),
-            "meanGapPct": _gap_pct(male_mean, female_mean),
-            "medianFemalePay": round(female_median, 2),
-            "medianMalePay": round(male_median, 2),
-            "medianGapPct": _gap_pct(male_median, female_median),
-            "variableComponentRecords": len(variable_rows),
-            "jointAssessmentFlag": abs(_gap_pct(male_mean, female_mean) or 0) >= 5,
-        })
+        category_results.append(
+            {
+                "country": country,
+                "workerCategory": category,
+                "currency": currency,
+                "employees": len({row["userId"] for row in rows}),
+                "femaleCount": len(female),
+                "maleCount": len(male),
+                "meanFemalePay": round(female_mean, 2),
+                "meanMalePay": round(male_mean, 2),
+                "meanGapPct": _gap_pct(male_mean, female_mean),
+                "medianFemalePay": round(female_median, 2),
+                "medianMalePay": round(male_median, 2),
+                "medianGapPct": _gap_pct(male_median, female_median),
+                "variableComponentRecords": len(variable_rows),
+                "jointAssessmentFlag": abs(_gap_pct(male_mean, female_mean) or 0) >= 5,
+            }
+        )
 
     all_amounts = sorted(usable, key=lambda row: row["amount"])
     quartiles = _quartile_distribution(all_amounts)
@@ -1337,7 +2010,9 @@ def _calculate_article9(evidence: dict, resolved: dict[str, str | None]) -> dict
         "status": "prototype_calculated" if category_results else "insufficient_data",
         "recordsAnalysed": len(pay_records),
         "recordsWithGender": len(usable),
-        "genderCoveragePct": round((len(usable) / len(pay_records)) * 100) if pay_records else 0,
+        "genderCoveragePct": round((len(usable) / len(pay_records)) * 100)
+        if pay_records
+        else 0,
         "joinDiagnostics": {
             "compRows": len(comp_rows),
             "userRows": len(user_rows),
@@ -1352,30 +2027,53 @@ def _calculate_article9(evidence: dict, resolved: dict[str, str | None]) -> dict
         },
         "categoryResults": category_results,
         "quartileDistribution": quartiles,
-        "limitations": _article9_limitations(evidence, pay_records, usable, category_results),
+        "limitations": _article9_limitations(
+            evidence, pay_records, usable, category_results
+        ),
     }
 
 
 def _worker_category(job: dict, position: dict):
     return (
         _first_value(job, ("jobCode", "payGrade", "position"))
-        or _first_value(position, ("jobCode", "jobLevel", "payGrade", "payRange", "code"))
+        or _first_value(
+            position, ("jobCode", "jobLevel", "payGrade", "payRange", "code")
+        )
         or "Unmapped"
     )
 
 
-def _article9_limitations(evidence: dict, pay_records: list[dict], usable: list[dict], category_results: list[dict]) -> list[str]:
+def _article9_limitations(
+    evidence: dict,
+    pay_records: list[dict],
+    usable: list[dict],
+    category_results: list[dict],
+) -> list[str]:
     notes = []
     if not pay_records:
-        notes.append("No compensation records with numeric pay values were available in the evidence pull.")
+        notes.append(
+            "No compensation records with numeric pay values were available in the evidence pull."
+        )
     if pay_records and not usable:
-        notes.append("Compensation records were found, but gender could not be joined for prototype Article 9-style calculations.")
+        notes.append(
+            "Compensation records were found, but gender could not be joined for prototype Article 9-style calculations."
+        )
     if usable and not category_results:
-        notes.append("Gendered pay records were found, but each worker category needs both male and female records to calculate gaps.")
-    notes.append("Prototype uses the capped evidence pull, not a full tenant audit. Increase the limit or add full audit mode for production evidence.")
-    notes.append("Worker category mapping is inferred from job/position/pay grade fields and should be validated by HR/legal.")
-    notes.append("Prototype calculations use available pay component rows and do not certify gross annual pay, gross hourly pay, ordinary basic pay, complementary or variable components, or national reporting formats.")
-    notes.append("Privacy suppression and small-population controls are not enforced before displaying category averages.")
+        notes.append(
+            "Gendered pay records were found, but each worker category needs both male and female records to calculate gaps."
+        )
+    notes.append(
+        "Prototype uses the capped evidence pull, not a full tenant audit. Increase the limit or add full audit mode for production evidence."
+    )
+    notes.append(
+        "Worker category mapping is inferred from job/position/pay grade fields and should be validated by HR/legal."
+    )
+    notes.append(
+        "Prototype calculations use available pay component rows and do not certify gross annual pay, gross hourly pay, ordinary basic pay, complementary or variable components, or national reporting formats."
+    )
+    notes.append(
+        "Privacy suppression and small-population controls are not enforced before displaying category averages."
+    )
     return notes
 
 
@@ -1385,17 +2083,19 @@ def _quartile_distribution(rows: list[dict]) -> list[dict]:
     quartiles = []
     size = math.ceil(len(rows) / 4)
     for i in range(4):
-        slice_rows = rows[i * size:(i + 1) * size]
+        slice_rows = rows[i * size : (i + 1) * size]
         if not slice_rows:
             continue
-        quartiles.append({
-            "quartile": i + 1,
-            "records": len(slice_rows),
-            "female": sum(1 for row in slice_rows if row["gender"] == "female"),
-            "male": sum(1 for row in slice_rows if row["gender"] == "male"),
-            "minPay": round(slice_rows[0]["amount"], 2),
-            "maxPay": round(slice_rows[-1]["amount"], 2),
-        })
+        quartiles.append(
+            {
+                "quartile": i + 1,
+                "records": len(slice_rows),
+                "female": sum(1 for row in slice_rows if row["gender"] == "female"),
+                "male": sum(1 for row in slice_rows if row["gender"] == "male"),
+                "minPay": round(slice_rows[0]["amount"], 2),
+                "maxPay": round(slice_rows[-1]["amount"], 2),
+            }
+        )
     return quartiles
 
 
@@ -1412,7 +2112,18 @@ def _normalise_gender(value) -> str | None:
 
 def _is_variable_component(component: str) -> bool:
     text = component.lower()
-    return any(marker in text for marker in ("bonus", "var", "commission", "incentive", "allowance", "stock", "equity"))
+    return any(
+        marker in text
+        for marker in (
+            "bonus",
+            "var",
+            "commission",
+            "incentive",
+            "allowance",
+            "stock",
+            "equity",
+        )
+    )
 
 
 def _first_value(row: dict, fields: tuple[str, ...]):
@@ -1464,7 +2175,6 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-
 def _safe_snippet(body: bytes, content_type: str) -> str:
     if "html" in (content_type or "").lower():
         return "Received HTML instead of OData. Check API base URL and credentials."
@@ -1476,7 +2186,11 @@ if __name__ == "__main__":
     server = ThreadingHTTPServer((HOST, port), PayTransparencyHandler)
     print(f"SF Pay Transparency app running at http://localhost:{port}")
     if LIVE_MODE:
-        print("Live tenant mode enabled: credentials and OData endpoints are available locally.")
+        print(
+            "Live tenant mode enabled: credentials and OData endpoints are available locally."
+        )
     else:
-        print("Demo-safe mode: set SFPT_LIVE_MODE=1 to enable local SuccessFactors OData checks.")
+        print(
+            "Demo-safe mode: set SFPT_LIVE_MODE=1 to enable local SuccessFactors OData checks."
+        )
     server.serve_forever()
