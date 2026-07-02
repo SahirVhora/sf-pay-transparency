@@ -2,13 +2,13 @@
 """Local-only CORS proxy for testing SuccessFactors OData from the static UI."""
 
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlparse
-from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
-
+from urllib.parse import parse_qs, urlparse
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 HOST = "127.0.0.1"
 PORT = 8081
+APP_PORT = 8080  # port the static UI is served from (see README)
 ALLOWED_HOST_SUFFIXES = (
     ".successfactors.eu",
     ".sapsf.eu",
@@ -16,14 +16,39 @@ ALLOWED_HOST_SUFFIXES = (
     ".sapsf.com",
 )
 
+# Origins allowed to call this proxy from a browser. Anything else gets 403,
+# so a random webpage the user has open cannot relay requests through here.
+ALLOWED_ORIGINS = {
+    f"http://localhost:{APP_PORT}",
+    f"http://127.0.0.1:{APP_PORT}",
+    f"http://[::1]:{APP_PORT}",
+}
+
+
+class _NoRedirect(HTTPRedirectHandler):
+    """Surface 3xx responses instead of following them. Following a redirect
+    would re-send the Authorization header to whatever host the redirect
+    points at, escaping the SF host allowlist."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+_OPENER = build_opener(_NoRedirect)
+
 
 class ProxyHandler(BaseHTTPRequestHandler):
+    def _origin_allowed(self):
+        origin = self.headers.get("Origin")
+        return origin is None or origin in ALLOWED_ORIGINS
+
     def _send_cors(self):
-        self.send_header("Access-Control-Allow-Origin", "*")
+        origin = self.headers.get("Origin")
+        if origin in ALLOWED_ORIGINS:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
-        self.send_header(
-            "Access-Control-Allow-Headers", "Authorization, Content-Type, Accept"
-        )
+        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept")
 
     def do_OPTIONS(self):
         self.send_response(204)
@@ -31,6 +56,9 @@ class ProxyHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        if not self._origin_allowed():
+            self._write_text(403, "Origin not allowed")
+            return
         parsed = urlparse(self.path)
         if parsed.path == "/" and not parsed.query:
             self._write_text(
@@ -65,7 +93,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
         try:
             req = Request(target, headers=headers, method="GET")
-            with urlopen(req, timeout=30) as resp:
+            with _OPENER.open(req, timeout=30) as resp:
                 body = resp.read()
                 self.send_response(resp.status)
                 self._send_cors()
@@ -75,12 +103,13 @@ class ProxyHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(body)
         except HTTPError as exc:
+            if 300 <= exc.code < 400:
+                self._write_text(502, "Provider redirect blocked by local proxy")
+                return
             body = exc.read()
             self.send_response(exc.code)
             self._send_cors()
-            self.send_header(
-                "Content-Type", exc.headers.get("Content-Type", "text/plain")
-            )
+            self.send_header("Content-Type", exc.headers.get("Content-Type", "text/plain"))
             self.end_headers()
             self.wfile.write(body)
         except URLError as exc:
@@ -96,7 +125,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
         self.wfile.write(text.encode("utf-8"))
 
     def log_message(self, fmt, *args):
-        print("%s - %s" % (self.address_string(), fmt % args))
+        print(f"{self.address_string()} - {fmt % args}")
 
 
 if __name__ == "__main__":
