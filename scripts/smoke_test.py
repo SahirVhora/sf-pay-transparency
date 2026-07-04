@@ -12,15 +12,12 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-
 ROOT = Path(__file__).resolve().parents[1]
 PORT = 8765
 BASE_URL = f"http://127.0.0.1:{PORT}"
 
 
-def request_json(
-    path: str, method: str = "GET", payload: dict | None = None
-) -> tuple[int, dict]:
+def request_json(path: str, method: str = "GET", payload: dict | None = None) -> tuple[int, dict]:
     body = None
     headers = {}
     if payload is not None:
@@ -34,9 +31,12 @@ def request_json(
         return exc.code, json.loads(exc.read().decode("utf-8"))
 
 
-def wait_for_server() -> None:
+def wait_for_server(proc: subprocess.Popen) -> None:
     deadline = time.time() + 10
     while time.time() < deadline:
+        if proc.poll() is not None:
+            _, stderr = proc.communicate(timeout=5)
+            raise RuntimeError(f"Backend exited early (code {proc.returncode}):\n{stderr}")
         try:
             status, payload = request_json("/health")
             if status == 200 and payload.get("ok") is True:
@@ -59,7 +59,7 @@ def main() -> int:
         text=True,
     )
     try:
-        wait_for_server()
+        wait_for_server(proc)
 
         status, credentials = request_json("/api/credentials")
         assert status == 200, status
