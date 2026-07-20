@@ -37,6 +37,23 @@ class _NoRedirect(HTTPRedirectHandler):
 _OPENER = build_opener(_NoRedirect)
 
 
+def is_allowed_target(target):
+    """Allow HTTPS requests only to SuccessFactors API subdomains."""
+    try:
+        parsed = urlparse(target)
+        hostname = (parsed.hostname or "").lower()
+        return (
+            parsed.scheme == "https"
+            and parsed.port in (None, 443)
+            and parsed.username is None
+            and parsed.password is None
+            and parsed.fragment == ""
+            and hostname.endswith(ALLOWED_HOST_SUFFIXES)
+        )
+    except (AttributeError, TypeError, ValueError):
+        return False
+
+
 class ProxyHandler(BaseHTTPRequestHandler):
     def _origin_allowed(self):
         origin = self.headers.get("Origin")
@@ -51,6 +68,9 @@ class ProxyHandler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept")
 
     def do_OPTIONS(self):
+        if not self._origin_allowed():
+            self._write_text(403, "Origin not allowed")
+            return
         self.send_response(204)
         self._send_cors()
         self.end_headers()
@@ -76,13 +96,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
             self._write_text(400, "Missing ?url=https://... target")
             return
 
-        target_url = urlparse(target)
-        if target_url.scheme != "https" or not target_url.hostname:
-            self._write_text(400, "Only HTTPS target URLs are allowed")
-            return
-
-        hostname = target_url.hostname.lower()
-        if not hostname.endswith(ALLOWED_HOST_SUFFIXES):
+        if not is_allowed_target(target):
             self._write_text(403, "Target host is not an SAP SuccessFactors API host")
             return
 
