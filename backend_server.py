@@ -7,17 +7,16 @@ server serves the static app and performs OData calls from Python.
 
 from __future__ import annotations
 
-import base64
 import json
 import math
 import os
+import time
 from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
-from urllib.request import Request, urlopen
 
+import requests
 from defusedxml.ElementTree import fromstring as _safe_fromstring
 
 HOST = "127.0.0.1"
@@ -32,6 +31,8 @@ ALLOWED_HOST_SUFFIXES = (
 )
 LIVE_MODE = os.getenv("SFPT_LIVE_MODE", "").lower() in ("1", "true", "yes", "on")
 MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", str(2 * 1024 * 1024)))
+RETRY_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
+RETRY_BACKOFF_SECONDS = (1, 2, 4)
 EDM_NS = "{http://schemas.microsoft.com/ado/2008/09/edm}"
 ALL_CHECK_IDS = (
     "pg_exists",
@@ -699,22 +700,46 @@ def _validate_sf_url(base_url: str):
 def _sf_get(
     url: str, username: str, password: str, accept: str = "application/json"
 ) -> tuple[int, bytes, str]:
-    token = base64.b64encode(f"{username}:{password}".encode()).decode("ascii")
-    req = Request(
-        url,
-        headers={
-            "Authorization": f"Basic {token}",
-            "Accept": accept,
-        },
-        method="GET",
-    )
-    try:
-        with urlopen(req, timeout=60) as resp:
-            return resp.status, resp.read(), resp.headers.get("Content-Type", "")
-    except HTTPError as exc:
-        return exc.code, exc.read(), exc.headers.get("Content-Type", "")
-    except URLError as exc:
-        raise RuntimeError(f"Could not reach SuccessFactors: {exc.reason}") from exc
+    """Issue a credentialed GET to a SAP SuccessFactors API host.
+
+    Retry transient failures without relying on the portfolio's sibling
+    ``sapsf_shared`` checkout: this repository is also built and tested as a
+    standalone GitHub project. Redirects are disabled so a credentialed
+    request can never forward its Authorization header across a 3xx hop.
+    """
+    headers = {"Accept": accept}
+    last_error: requests.exceptions.RequestException | None = None
+
+    for attempt, delay in enumerate(RETRY_BACKOFF_SECONDS):
+        try:
+            response = requests.get(
+                url,
+                headers=headers,
+                auth=(username, password),
+                timeout=60,
+                allow_redirects=False,
+            )
+        except requests.exceptions.RequestException as exc:
+            last_error = exc
+        else:
+            if response.status_code not in RETRY_STATUS_CODES:
+                return (
+                    response.status_code,
+                    response.content,
+                    response.headers.get("Content-Type", ""),
+                )
+            last_error = None
+            if attempt == len(RETRY_BACKOFF_SECONDS) - 1:
+                return (
+                    response.status_code,
+                    response.content,
+                    response.headers.get("Content-Type", ""),
+                )
+
+        if attempt < len(RETRY_BACKOFF_SECONDS) - 1:
+            time.sleep(delay)
+
+    raise RuntimeError(f"Could not reach SuccessFactors: {last_error}") from last_error
 
 
 def _entity_has_rows(base_url: str, username: str, password: str, entity: str, fields: str) -> bool:
