@@ -1,6 +1,6 @@
-# CLAUDE.md — sf-pay-transparency
+# CLAUDE.md: sf-pay-transparency
 
-Flask proxy server for SAP SuccessFactors Pay Transparency. Handles OData metadata fetching, API key management, and CORS proxy for a React frontend.
+Python (standard library http.server) backend and proxy for SAP SuccessFactors Pay Transparency. Handles OData metadata fetching, API key management, and CORS proxy for a React frontend.
 
 ## DO NOT
 - Delete or modify .github/workflows/ files
@@ -11,10 +11,13 @@ Flask proxy server for SAP SuccessFactors Pay Transparency. Handles OData metada
 
 ## Commands
 - Syntax check: `python3 -m py_compile backend_server.py proxy_server.py`
-- No test suite exists yet — verify by running syntax check + manual smoke test
+- Unit tests: `python3 -m unittest discover -s tests`
+- Smoke test (starts the backend in demo mode): `python3 scripts/smoke_test.py`
+- Run all three before pushing; CI runs the same steps
 - Git: default branch is `main`. Always `git pull --rebase origin main` before pushing.
 
 ## Structure
-- `backend_server.py` — main Flask app (OData metadata, API endpoints)
-- `proxy_server.py` — CORS proxy for frontend API calls
-- `scripts/smoke_test.py` — basic smoke test / health check
+- `backend_server.py`: main backend server (OData metadata, API endpoints)
+- `proxy_server.py`: CORS proxy for frontend API calls
+- `scripts/smoke_test.py`: demo-mode smoke test against the backend endpoints
+- `tests/`: unit tests for backend HTTP handling and proxy security
