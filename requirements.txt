@@ -1,2 +1,3 @@
+-c security-constraints.txt
 defusedxml>=0.7.1
 requests>=2.31
