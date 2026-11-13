@@ -11,7 +11,8 @@ Flask proxy server for SAP SuccessFactors Pay Transparency. Handles OData metada
 
 ## Commands
 - Syntax check: `python3 -m py_compile backend_server.py proxy_server.py`
-- No test suite exists yet — verify by running syntax check + manual smoke test
+- Tests: `.venv/bin/python -m unittest discover -s tests -v`
+- Demo smoke test: `.venv/bin/python scripts/smoke_test.py`
 - Git: default branch is `main`. Always `git pull --rebase origin main` before pushing.
 
 ## Structure
