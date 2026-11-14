@@ -1590,8 +1590,21 @@ async function saveConnection() {
 }
 
 async function loadSavedCredentials() {
+  // GitHub Pages is a static demo: its /api path is an HTML 404 page,
+  // while the local backend exposes the credential discovery endpoint.
+  if (location.hostname.endsWith('.github.io') || location.protocol === 'file:') {
+    state.liveMode = false;
+    state.connected = false;
+    state.hasSavedPassword = false;
+    state.countryOptions = [];
+    updateStatus();
+    updateRefreshLabel();
+    return;
+  }
   try {
     const resp = await fetch('/api/credentials');
+    // A plain static development server also has no local backend.
+    if (resp.status === 404 || !resp.headers.get('content-type')?.includes('application/json')) return;
     const data = await resp.json();
     if (resp.ok && data.ok) {
       state.liveMode = !!data.liveMode;
