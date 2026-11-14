@@ -91,7 +91,7 @@ def main() -> None:
             static_page.on("console", lambda message: errors.append(message.text)
                            if message.type in {"error", "warning"} else None)
             static_page.goto(Path("index.html").resolve().as_uri(), wait_until="networkidle")
-            assert "Demo Mode" in static_page.locator("body").inner_text()
+            assert "Demo-Safe Mode" in static_page.locator("body").inner_text()
             assert not static_requests, f"Static demo called a backend: {static_requests}"
             browser.close()
         assert not errors, "\n".join(errors)
