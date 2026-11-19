@@ -159,6 +159,12 @@ Basic Python syntax check:
 python3 -m py_compile backend_server.py proxy_server.py
 ```
 
+Automated tests, from the project root with dependencies installed:
+
+```bash
+.venv/bin/python -m unittest discover -s tests -v
+```
+
 Demo-mode smoke test:
 
 ```bash

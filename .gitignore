@@ -1,17 +1,13 @@
-1|.pay_transparency_credentials.*
-2|.env
-3|.env.*
-4|__pycache__/
-5|*.pyc
-6|
-# Python
+.pay_transparency_credentials.*
+.env
+.env.*
+__pycache__/
+*.pyc
+.venv/
 venv/
 node_modules/
 *.db
 .pay_transparency_credentials.json
-
-__pycache__/
-*.pyc
 
 .audit-result.json
 .claude/settings.local.json
@@ -19,6 +15,5 @@ __pycache__/
 .DS_Store
 
 # Audit 2026-07-30: tenant data stores / local SQLite caches - never commit
-*.db
 *.sqlite
 *.sqlite3
